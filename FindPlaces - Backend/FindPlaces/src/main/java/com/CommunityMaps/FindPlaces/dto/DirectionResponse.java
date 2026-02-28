@@ -1,22 +1,32 @@
 package com.CommunityMaps.FindPlaces.dto;
 
+import java.util.List;
+
+/*
+ * UPDATED FILE
+ *
+ * CHANGES:
+ * 1. Removed raw field
+ * 2. Added List<NavigationStep> steps
+ */
+
 public class DirectionResponse {
 
     private double distanceKm;
     private double durationMinutes;
     private String polyline;
 
-    // This will hold full OSRM response
-    private Object raw;
+    // 🔥 NEW FIELD ADDED
+    private List<NavigationStep> steps;
 
     public DirectionResponse(double distanceKm,
                              double durationMinutes,
                              String polyline,
-                             Object raw) {
+                             List<NavigationStep> steps) {
         this.distanceKm = distanceKm;
         this.durationMinutes = durationMinutes;
         this.polyline = polyline;
-        this.raw = raw;
+        this.steps = steps;
     }
 
     public double getDistanceKm() {
@@ -31,7 +41,8 @@ public class DirectionResponse {
         return polyline;
     }
 
-    public Object getRaw() {
-        return raw;
+    // 🔥 NEW GETTER
+    public List<NavigationStep> getSteps() {
+        return steps;
     }
 }

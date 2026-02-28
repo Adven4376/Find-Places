@@ -1,9 +1,11 @@
 package com.CommunityMaps.FindPlaces.service;
 
 import com.CommunityMaps.FindPlaces.dto.DirectionResponse;
+import com.CommunityMaps.FindPlaces.dto.NavigationStep;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +17,6 @@ public class DirectionsServiceImpl implements DirectionsService {
     @Override
     public DirectionResponse getRoute(double fromLat, double fromLng, double toLat, double toLng) {
 
-        // OSRM expects: lng,lat;lng,lat
         String url = String.format(
                 "https://router.project-osrm.org/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=polyline&steps=true",
                 fromLng, fromLat, toLng, toLat
@@ -37,11 +38,70 @@ public class DirectionsServiceImpl implements DirectionsService {
         double distanceKm = distanceMeters / 1000.0;
         double durationMinutes = durationSeconds / 60.0;
 
+        /*
+         * 🔥 NEW BLOCK ADDED
+         * Extract step-based navigation from OSRM
+         */
+
+        List<NavigationStep> navigationSteps = new ArrayList<>();
+
+        List<Map<String, Object>> legs =
+                (List<Map<String, Object>>) route.get("legs");
+
+        Map<String, Object> firstLeg = legs.get(0);
+
+        List<Map<String, Object>> steps =
+                (List<Map<String, Object>>) firstLeg.get("steps");
+
+        for (Map<String, Object> step : steps) {
+
+            Map<String, Object> maneuver =
+                    (Map<String, Object>) step.get("maneuver");
+
+            String type = (String) maneuver.get("type");
+            String modifier = maneuver.get("modifier") != null
+                    ? (String) maneuver.get("modifier")
+                    : "";
+
+            String instruction = (type + " " + modifier).trim();
+
+            double stepDistance =
+                    ((Number) step.get("distance")).doubleValue();
+
+            double stepDuration =
+                    ((Number) step.get("duration")).doubleValue();
+
+            String stepGeometry =
+                    (String) step.get("geometry");
+
+            List<Number> location =
+                    (List<Number>) maneuver.get("location");
+
+            double[] maneuverLocation = new double[]{
+                    location.get(0).doubleValue(), // lng
+                    location.get(1).doubleValue()  // lat
+            };
+
+            navigationSteps.add(
+                    new NavigationStep(
+                            instruction,
+                            stepDistance,
+                            stepDuration,
+                            stepGeometry,
+                            maneuverLocation
+                    )
+            );
+        }
+
+        /*
+         * 🔥 CONSTRUCTOR UPDATED
+         */
+
         return new DirectionResponse(
                 distanceKm,
                 durationMinutes,
                 polyline,
-                response   // full OSRM JSON
+                navigationSteps
         );
     }
 }

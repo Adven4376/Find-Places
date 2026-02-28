@@ -16,6 +16,19 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
   useEffect(() => {
   if (!data.steps[currentStepIndex]) return;
 
+  const instruction = data.steps[currentStepIndex].instruction;
+
+  const utterance = new SpeechSynthesisUtterance(instruction);
+  utterance.rate = 1;
+  utterance.pitch = 1;
+
+  window.speechSynthesis.speak(utterance);
+
+}, [currentStepIndex]);
+
+  useEffect(() => {
+  if (!data.steps[currentStepIndex]) return;
+
   const msg = new SpeechSynthesisUtterance(
     data.steps[currentStepIndex].instruction
   );
@@ -51,15 +64,21 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
           onDeviation(lat, lng);
         }
 
-        // 🔥 step progress detection
-        const nextIndex = routeCoords.findIndex(
-        ([rLat, rLng]) =>
-            Math.abs(rLat - lat) < 0.0005 &&
-            Math.abs(rLng - lng) < 0.0005
-        );
+        // 🔥 STEP PROGRESS DETECTION
+        const currentStep = data.steps[currentStepIndex];
 
-        if (nextIndex !== -1) {
-        setCurrentStepIndex(nextIndex);
+        if (currentStep) {
+        const [stepLng, stepLat] = currentStep.location;
+
+        const isNearStep =
+            Math.abs(stepLat - lat) < 0.0005 &&
+            Math.abs(stepLng - lng) < 0.0005;
+
+        if (isNearStep) {
+            setCurrentStepIndex((prev) =>
+            prev < data.steps.length - 1 ? prev + 1 : prev
+            );
+        }
         }
 
       },
@@ -143,12 +162,12 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
         {data.steps.map((step, index) => (
           <div
             key={index}
-            className={`p-3 mb-2 rounded-lg transition-all ${
+            className={`p-3 mb-2 rounded-lg transition-all duration-300 ${
             index === currentStepIndex
-                ? "bg-blue-600 text-white scale-105 shadow-lg"
+                ? "bg-blue-600 text-white shadow-lg scale-105"
                 : "bg-gray-100 dark:bg-white/5"
             }`}
-          >
+        >
             <div className="text-sm font-medium">
               {step.instruction}
             </div>

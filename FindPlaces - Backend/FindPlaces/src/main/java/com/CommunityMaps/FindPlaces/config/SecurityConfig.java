@@ -49,6 +49,8 @@ public class SecurityConfig {
                         // Places: only logged-in users can create
                         .requestMatchers(HttpMethod.POST, "/api/places/**").authenticated()
 
+                        .requestMatchers("/uploads/**").permitAll()
+
                         // Everything else needs login
                         .anyRequest().authenticated()
                 )

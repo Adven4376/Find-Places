@@ -10,6 +10,8 @@ export default function PlaceDetails({ place, onClose, onNavigate }) {
   const { user } = useContext(AuthContext);
   const { register, handleSubmit, reset } = useForm();
 
+  const [previewImage, setPreviewImage] = useState(null);
+
   useEffect(() => {
     if (place) fetchDetails();
   }, [place]);
@@ -62,6 +64,19 @@ export default function PlaceDetails({ place, onClose, onNavigate }) {
         onClick={onClose}
       />
 
+      {previewImage && (
+  <div
+    className="fixed inset-0 bg-black/80 flex items-center justify-center z-[10000]"
+    onClick={() => setPreviewImage(null)}
+  >
+    <img
+      src={previewImage}
+      alt=""
+      className="max-h-[90vh] max-w-[90vw] rounded-2xl shadow-2xl"
+    />
+  </div>
+)}
+
       {/* SIDE DRAWER */}
       <div
         className="
@@ -107,22 +122,24 @@ export default function PlaceDetails({ place, onClose, onNavigate }) {
 
         {/* Photos */}
         {photos.length > 0 && (
-          <>
-            <h3 className="font-semibold mb-3 text-gray-800 dark:text-white">
-              Photos
-            </h3>
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {photos.map(photo => (
-                <img
-                  key={photo.id}
-                  src={`http://localhost:9090${photo.url}`}
-                  alt=""
-                  className="rounded-xl object-cover h-28 w-full shadow-md"
-                />
-              ))}
-            </div>
-          </>
-        )}
+  <>
+    <h3 className="font-semibold mb-3">Photos</h3>
+
+    <div className="grid grid-cols-2 gap-4 mb-6">
+      {photos.map(photo => (
+        <img
+          key={photo.id}
+          src={`http://localhost:9090${photo.url}`}
+          alt=""
+          onClick={() =>
+            setPreviewImage(`http://localhost:9090${photo.url}`)
+          }
+          className="rounded-xl w-full h-40 object-contain bg-black/10 cursor-pointer hover:scale-105 transition-all duration-300"
+        />
+      ))}
+    </div>
+  </>
+)}
 
         {/* Reviews */}
         <h3 className="font-semibold mb-3 text-gray-800 dark:text-white">

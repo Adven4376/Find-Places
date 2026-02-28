@@ -81,8 +81,21 @@ export default function AddPlaceForm({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000]">
-      <div className="bg-white dark:bg-gray-800 w-[500px] p-6 rounded-xl shadow-xl">
+    <div className="
+fixed inset-0
+bg-black/40 backdrop-blur-sm
+flex items-center justify-center
+z-[6000]
+">
+      <div className="
+bg-white dark:bg-[#1f2937]
+rounded-2xl
+shadow-2xl
+w-[95%] md:w-[600px]
+max-h-[90vh]
+overflow-y-auto
+p-6
+">
 
         <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
           Add New Place
