@@ -3,7 +3,8 @@ import {
   MapContainer,
   TileLayer,
   Marker,
-  Polyline
+  Polyline,
+  useMap
 } from "react-leaflet";
 import L from "leaflet";
 import polyline from "@mapbox/polyline";
@@ -11,7 +12,7 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import api from "../api/axios";
 import PlaceDetails from "./PlaceDetails";
 import AddPlaceForm from "./AddPlaceForm";
-import "leaflet/dist/leaflet.css";
+
 
 /* ---------------- ICON FIX ---------------- */
 
@@ -26,6 +27,24 @@ L.Icon.Default.mergeOptions({
     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png"
 });
 
+/* ---------------- AUTO ZOOM COMPONENT ---------------- */
+
+function AutoZoom({ places }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!places || places.length === 0) return;
+
+    const bounds = L.latLngBounds(
+      places.map((p) => [p.latitude, p.longitude])
+    );
+
+    map.fitBounds(bounds, { padding: [80, 80] });
+  }, [places, map]);
+
+  return null;
+}
+
 /* ---------------- MAIN COMPONENT ---------------- */
 
 export default function MapView() {
@@ -36,13 +55,10 @@ export default function MapView() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
 
-  /* ----- Category Filter States ----- */
   const [categorySearch, setCategorySearch] = useState("");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [categories, setCategories] = useState([]);
-
-  /* ---------------- FETCH PLACES ---------------- */
 
   useEffect(() => {
     fetchPlaces();
@@ -58,8 +74,6 @@ export default function MapView() {
     }
   };
 
-  /* ---------------- AUTO CATEGORY GENERATION ---------------- */
-
   useEffect(() => {
     if (!places || places.length === 0) return;
 
@@ -71,8 +85,6 @@ export default function MapView() {
     setCategories(unique);
   }, [places]);
 
-  /* ---------------- LIVE LOCATION ---------------- */
-
   useEffect(() => {
     if (!navigator.geolocation) return;
 
@@ -83,8 +95,6 @@ export default function MapView() {
       });
     });
   }, []);
-
-  /* ---------------- NAVIGATION ---------------- */
 
   const handleNavigate = async (place) => {
     if (!navigator.geolocation) return;
@@ -110,124 +120,179 @@ export default function MapView() {
     });
   };
 
-  /* ---------------- RENDER ---------------- */
+  const handleCategorySelect = (cat) => {
+    setSelectedCategory(cat);
+    setCategoryOpen(false);
+
+    if (cat === "ALL") {
+      setDisplayedPlaces(places);
+    } else {
+      const filtered = places.filter(
+        (p) => p.category === cat
+      );
+      setDisplayedPlaces(filtered);
+    }
+  };
 
   return (
-    <div className="relative h-full w-full">
+  <div className="h-[calc(100vh-64px)] flex overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-[#0f172a] dark:to-[#111827]">
 
-      {/* -------- Premium Category Filter -------- */}
-      <div className="absolute top-4 left-4 z-[3000] w-64">
-        <div
-          className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-3 cursor-pointer"
-          onClick={() => setCategoryOpen(!categoryOpen)}
-        >
-          <div className="flex justify-between items-center">
-            <span className="font-medium text-gray-800 dark:text-white">
-              {selectedCategory}
-            </span>
-            <span className="text-gray-500">⌄</span>
+    {/* LEFT PANEL - LIST DOMINANT */}
+   <div className="w-3/5 flex flex-col border-r border-gray-200 dark:border-white/10 bg-white/40 dark:bg-white/5 backdrop-blur-xl">
+
+      {/* CATEGORY + SEARCH HEADER */}
+      <div className="p-4 bg-white dark:bg-gray-900 shadow-sm">
+        <div className="relative">
+          <div
+            className="bg-gray-200 dark:bg-gray-800 rounded-lg p-3 cursor-pointer"
+            onClick={() => setCategoryOpen(!categoryOpen)}
+          >
+            {selectedCategory}
           </div>
+
+          {categoryOpen && (
+            <div className="absolute mt-2 w-full bg-white dark:bg-gray-800 rounded-lg shadow-xl max-h-60 overflow-y-auto z-50">
+              <input
+                type="text"
+                placeholder="Search category..."
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                className="w-full p-2 border-b dark:bg-gray-700"
+              />
+              {categories
+                .filter((cat) =>
+                  cat.toLowerCase().includes(categorySearch.toLowerCase())
+                )
+                .map((cat) => (
+                  <div
+                    key={cat}
+                    onClick={() => handleCategorySelect(cat)}
+                    className="p-3 hover:bg-blue-100 dark:hover:bg-gray-700 cursor-pointer"
+                  >
+                    {cat}
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
-
-        {categoryOpen && (
-          <div className="mt-2 bg-white dark:bg-gray-800 shadow-xl rounded-lg p-3 max-h-60 overflow-y-auto">
-            <input
-              type="text"
-              placeholder="Search category..."
-              value={categorySearch}
-              onChange={(e) => setCategorySearch(e.target.value)}
-              className="w-full mb-2 px-3 py-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            />
-
-            {categories
-              .filter((cat) =>
-                cat.toLowerCase().includes(categorySearch.toLowerCase())
-              )
-              .map((cat) => (
-                <div
-                  key={cat}
-                  onClick={() => {
-                    setSelectedCategory(cat);
-                    setCategoryOpen(false);
-
-                    if (cat === "ALL") {
-                      setDisplayedPlaces(places);
-                    } else {
-                      const filtered = places.filter(
-                        (p) => p.category === cat
-                      );
-                      setDisplayedPlaces(filtered);
-                    }
-                  }}
-                  className={`px-3 py-2 rounded-md cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-700 ${
-                    selectedCategory === cat
-                      ? "bg-blue-500 text-white"
-                      : "text-gray-800 dark:text-white"
-                  }`}
-                >
-                  {cat}
-                </div>
-              ))}
-          </div>
-        )}
       </div>
 
-      {/* -------- Floating Add Button -------- */}
-      <button
-        onClick={() => setShowAddForm(true)}
-        className="absolute bottom-6 right-6 z-[3000] bg-blue-600 text-white p-4 rounded-full shadow-xl text-xl hover:bg-blue-700 transition"
-      >
-        +
-      </button>
+      {/* SCROLLABLE PLACE LIST */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-5 scroll-smooth">
+        {displayedPlaces.map((place) => (
+          <div
+            key={place.id}
+            onClick={() => setSelectedPlace(place)}
+            className="
+            bg-white/80 dark:bg-white/5
+            backdrop-blur-lg
+            border border-gray-200 dark:border-white/10
+            rounded-2xl
+            p-5
+            shadow-sm
+            hover:shadow-xl
+            hover:-translate-y-1
+            transition-all duration-300
+            cursor-pointer
+            "
+          >
+            <h3 className="text-xl font-semibold tracking-tight text-gray-800 dark:text-white">
+              {place.name}
+            </h3>
+            <p className="text-xs uppercase tracking-widest text-blue-500 dark:text-blue-400 font-medium">
+              {place.category}
+            </p>
+            <p className="text-sm mt-1">
+              {place.description?.slice(0, 80)}...
+            </p>
+          </div>
+        ))}
 
-      {/* -------- MAP -------- */}
-      <MapContainer
-        center={[17.385, 78.4867]}
-        zoom={13}
-        className="h-full w-full"
-      >
-        <TileLayer
-          attribution="© OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        <MarkerClusterGroup chunkedLoading>
-          {displayedPlaces.map((place) => (
-            <Marker
-              key={place.id}
-              position={[place.latitude, place.longitude]}
-              eventHandlers={{
-                click: () => setSelectedPlace(place)
-              }}
-            />
-          ))}
-        </MarkerClusterGroup>
-
-        {currentLocation && (
-          <Marker position={[currentLocation.lat, currentLocation.lng]} />
-        )}
-
-        {routeCoords.length > 0 && (
-          <Polyline positions={routeCoords} color="blue" />
-        )}
-      </MapContainer>
-
-      {/* -------- PLACE DETAILS -------- */}
-      {selectedPlace && (
-        <PlaceDetails
-          place={selectedPlace}
-          onClose={() => setSelectedPlace(null)}
-          onNavigate={handleNavigate}
-        />
-      )}
-
-      {/* -------- ADD PLACE FORM -------- */}
-      {showAddForm && (
-        <AddPlaceForm
-          onClose={() => setShowAddForm(false)}
-          onSuccess={fetchPlaces}
-        />
-      )}
+      </div>
     </div>
-  );
+
+    {/* RIGHT PANEL - MAP */}
+   <div className="w-2/5 p-6 flex flex-col relative">
+
+  {/* Rounded Map Container */}
+  <div className="
+    flex-1
+    rounded-3xl
+    overflow-hidden
+    border border-gray-200 dark:border-white/10
+    shadow-2xl
+    bg-white dark:bg-[#0b1120]
+  ">
+
+    <MapContainer
+      center={[17.385, 78.4867]}
+      zoom={13}
+      className="h-full w-full"
+    >
+      <TileLayer
+        attribution="© OpenStreetMap contributors"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+      <AutoZoom places={displayedPlaces} />
+
+      <MarkerClusterGroup chunkedLoading>
+        {displayedPlaces.map((place) => (
+          <Marker
+            key={place.id}
+            position={[place.latitude, place.longitude]}
+            eventHandlers={{
+              click: () => setSelectedPlace(place)
+            }}
+          />
+        ))}
+      </MarkerClusterGroup>
+
+      {currentLocation && (
+        <Marker position={[currentLocation.lat, currentLocation.lng]} />
+      )}
+
+      {routeCoords.length > 0 && (
+        <Polyline positions={routeCoords} color="blue" />
+      )}
+    </MapContainer>
+  </div>
+
+  {/* Floating Add Button - OUTSIDE map wrapper */}
+  <button
+    onClick={() => setShowAddForm(true)}
+    className="
+      absolute bottom-10 right-10
+      bg-gradient-to-r from-blue-500 to-indigo-600
+      text-white
+      p-5
+      rounded-full
+      shadow-2xl
+      hover:scale-110
+      transition-all duration-300
+    "
+  >
+    +
+  </button>
+
+</div>
+
+    {/* DETAILS PANEL */}
+    {selectedPlace && (
+  <PlaceDetails
+    place={selectedPlace}
+    onClose={() => setSelectedPlace(null)}
+    onNavigate={handleNavigate}
+  />
+)}
+
+{showAddForm && (
+  <AddPlaceForm
+    onClose={() => setShowAddForm(false)}
+    onSuccess={fetchPlaces}
+  />
+)}
+
+  </div>
+);
 }
