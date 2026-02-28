@@ -12,6 +12,7 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import api from "../api/axios";
 import PlaceDetails from "./PlaceDetails";
 import AddPlaceForm from "./AddPlaceForm";
+import NavigationScreen from "./NavigationScreen";
 
 
 /* ---------------- ICON FIX ---------------- */
@@ -60,6 +61,9 @@ export default function MapView() {
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [categories, setCategories] = useState([]);
 
+  const [navigationMode, setNavigationMode] = useState(false);
+  const [navigationData, setNavigationData] = useState(null);
+
   useEffect(() => {
     fetchPlaces();
   }, []);
@@ -88,7 +92,7 @@ export default function MapView() {
   useEffect(() => {
     if (!navigator.geolocation) return;
 
-    navigator.geolocation.getCurrentPosition((pos) => {
+    navigator.geolocation.watchPosition((pos) => {
       setCurrentLocation({
         lat: pos.coords.latitude,
         lng: pos.coords.longitude
@@ -97,29 +101,38 @@ export default function MapView() {
   }, []);
 
   const handleNavigate = async (place) => {
-    if (!navigator.geolocation) return;
+  if (!navigator.geolocation) return;
 
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      try {
-        const res = await api.get("/api/directions", {
-          params: {
-            fromLat: pos.coords.latitude,
-            fromLng: pos.coords.longitude,
-            toLat: place.latitude,
-            toLng: place.longitude
-          }
-        });
+  navigator.geolocation.watchPosition(async (pos) => {
+    try {
+      const res = await api.get("/api/directions", {
+        params: {
+          fromLat: pos.coords.latitude,
+          fromLng: pos.coords.longitude,
+          toLat: place.latitude,
+          toLng: place.longitude
+        }
+      });
 
-        const decoded = polyline.decode(res.data.polyline);
-        const latLngs = decoded.map(([lat, lng]) => [lat, lng]);
+      const decoded = polyline.decode(res.data.polyline);
+      const latLngs = decoded.map(([lat, lng]) => [lat, lng]);
 
-        setRouteCoords(latLngs);
-      } catch (err) {
-        console.error("Failed to fetch route", err);
-      }
-    });
-  };
+      setRouteCoords(latLngs);
 
+      setNavigationData({
+        distance: res.data.distance,
+        duration: res.data.duration,
+        steps: res.data.steps || [],
+        destination: place
+      });
+
+      setNavigationMode(true);
+
+    } catch (err) {
+      console.error("Failed to fetch route", err);
+    }
+  });
+};
   const handleCategorySelect = (cat) => {
     setSelectedCategory(cat);
     setCategoryOpen(false);
@@ -133,6 +146,18 @@ export default function MapView() {
       setDisplayedPlaces(filtered);
     }
   };
+  if (navigationMode && navigationData) {
+  return (
+    <NavigationScreen
+      data={navigationData}
+      routeCoords={routeCoords}
+      onExit={() => {
+        setNavigationMode(false);
+        setRouteCoords([]);
+      }}
+    />
+  );
+}
 
   return (
   <div className="h-[calc(100vh-64px)] flex overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-[#0f172a] dark:to-[#111827]">
