@@ -103,7 +103,7 @@ export default function MapView() {
   const handleNavigate = async (place) => {
   if (!navigator.geolocation) return;
 
-  navigator.geolocation.watchPosition(async (pos) => {
+  navigator.geolocation.getCurrentPosition(async (pos) => {
     try {
       const res = await api.get("/api/directions", {
         params: {
@@ -116,13 +116,24 @@ export default function MapView() {
 
       const decoded = polyline.decode(res.data.polyline);
       const latLngs = decoded.map(([lat, lng]) => [lat, lng]);
-
       setRouteCoords(latLngs);
 
+      // 🔥 EXTRACT STEPS FROM RAW
+      const rawSteps =
+        res.data.raw?.routes?.[0]?.legs?.[0]?.steps || [];
+
+      const formattedSteps = rawSteps.map((step) => ({
+        instruction:
+          `${step.maneuver.type.replace("_", " ")} ${
+            step.maneuver.modifier || ""
+          }`.trim(),
+        distance: (step.distance / 1000).toFixed(2) + " km"
+      }));
+
       setNavigationData({
-        distance: res.data.distance,
-        duration: res.data.duration,
-        steps: res.data.steps || [],
+        distance: res.data.distanceKm.toFixed(2) + " km",
+        duration: res.data.durationMinutes.toFixed(0) + " mins",
+        steps: formattedSteps,
         destination: place
       });
 
@@ -133,6 +144,30 @@ export default function MapView() {
     }
   });
 };
+
+const handleReRoute = async (lat, lng) => {
+  if (!navigationData?.destination) return;
+
+  try {
+    const res = await api.get("/api/directions", {
+      params: {
+        fromLat: lat,
+        fromLng: lng,
+        toLat: navigationData.destination.latitude,
+        toLng: navigationData.destination.longitude
+      }
+    });
+
+    const decoded = polyline.decode(res.data.polyline);
+    const latLngs = decoded.map(([lat, lng]) => [lat, lng]);
+
+    setRouteCoords(latLngs);
+
+  } catch (err) {
+    console.error("Re-route failed", err);
+  }
+};
+
   const handleCategorySelect = (cat) => {
     setSelectedCategory(cat);
     setCategoryOpen(false);
@@ -154,6 +189,9 @@ export default function MapView() {
       onExit={() => {
         setNavigationMode(false);
         setRouteCoords([]);
+      }}
+      onReRoute={(lat, lng) => {
+        handleReRoute(lat, lng);
       }}
     />
   );
