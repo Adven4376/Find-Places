@@ -41,6 +41,10 @@ export default function PlaceDetails({ place, onClose, onNavigate }) {
   };
 
   const submitReview = async (data) => {
+        if (!user) {
+      setShowLogin(true);
+      return;
+    }
     try {
       await api.post("/api/reviews", {
         placeId: place.id,

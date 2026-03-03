@@ -9,4 +9,5 @@ public interface ReviewService {
     ReviewResponse addOrUpdateReview(CreateReviewRequest request);
     List<ReviewResponse> getReviewsForPlace(Long placeId);
     double getAverageRating(Long placeId);
+    long getReviewCount(Long placeId);
 }

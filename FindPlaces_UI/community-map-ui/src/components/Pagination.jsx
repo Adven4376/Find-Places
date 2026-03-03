@@ -1,4 +1,9 @@
 export default function Pagination({ page, totalPages, onPageChange }) {
+  // 🔥 Hide pagination when navigation screen is active
+  if (document.querySelector(".h-screen")) {
+    return null;
+  }
+
   if (totalPages <= 1) return null;
 
   return (

@@ -43,4 +43,8 @@ public interface FindPlacesService {
 
     List<PlaceResponse> getTopRatedNearby(double lat, double lng, double radius, int limit);
 
+    public List<String> getAllCategories();
+
+    List<PlaceResponse> searchByName(String name);
+
 }

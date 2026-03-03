@@ -17,4 +17,5 @@ public class ReviewResponse {
     public String getUsername() { return username; }
     public Integer getRating() { return rating; }
     public String getComment() { return comment; }
+
 }

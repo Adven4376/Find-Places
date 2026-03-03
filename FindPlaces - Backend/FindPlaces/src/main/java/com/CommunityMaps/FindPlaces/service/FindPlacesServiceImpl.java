@@ -12,25 +12,39 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
+
+
 @Service
 public class FindPlacesServiceImpl implements FindPlacesService {
 
     private final FindPlacesRepository repository;
+    private final ReviewService reviewService;
 
-    public FindPlacesServiceImpl(FindPlacesRepository repository) {
+    public FindPlacesServiceImpl(FindPlacesRepository repository,
+                                 ReviewService reviewService) {
         this.repository = repository;
+        this.reviewService = reviewService;
     }
 
     private PlaceResponse mapToResponse(FindPlaces place) {
-        return new PlaceResponse(
-                place.getId(),
-                place.getName(),
-                place.getCategory(),
-                place.getLatitude(),
-                place.getLongitude(),
-                place.getDescription()
-        );
+
+        PlaceResponse response = new PlaceResponse();
+
+        response.setId(place.getId());
+        response.setName(place.getName());
+        response.setCategory(place.getCategory());
+        response.setLatitude(place.getLatitude());
+        response.setLongitude(place.getLongitude());
+        response.setDescription(place.getDescription());
+
+        // 🔥 Fetch rating dynamically from ReviewService
+        double avgRating = reviewService.getAverageRating(place.getId());
+        response.setAverageRating(avgRating);
+        response.setReviewCount(reviewService.getReviewCount(place.getId()));
+
+        return response;
     }
+
 
     @Override
     public List<PlaceResponse> getAllApprovedPlaces() {
@@ -172,6 +186,19 @@ public class FindPlacesServiceImpl implements FindPlacesService {
 
         place.setDeleted(true);
         repository.save(place);
+    }
+
+    public List<String> getAllCategories() {
+        return repository.findDistinctCategories();
+    }
+
+    @Override
+    public List<PlaceResponse> searchByName(String name) {
+        return repository
+                .findByNameContainingIgnoreCase(name)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
 

@@ -42,6 +42,8 @@ export default function AddPlaceForm({ onClose, onSuccess }) {
   const [position, setPosition] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
 
+  const [photo, setPhoto] = useState(null);
+
   useEffect(() => {
     if (!navigator.geolocation) {
       setLoadingLocation(false);
@@ -63,22 +65,44 @@ export default function AddPlaceForm({ onClose, onSuccess }) {
     );
   }, [setValue]);
 
-  const onSubmit = async (data) => {
-    try {
-      await api.post("/api/places", {
-        name: data.name,
-        category: data.category.toUpperCase().replace(/\s+/g, "_"),
-        latitude: Number(data.latitude),
-        longitude: Number(data.longitude),
-        description: data.description
-      });
+ const onSubmit = async (data) => {
+  try {
 
-      onSuccess();
-      onClose();
-    } catch {
-      alert("Failed to add place");
+    // 1️⃣ Create Place
+    const res = await api.post("/api/places", {
+      name: data.name,
+      category: data.category.toUpperCase().replace(/\s+/g, "_"),
+      latitude: Number(data.latitude),
+      longitude: Number(data.longitude),
+      description: data.description
+    });
+
+    const createdPlace = res.data;
+
+    // 2️⃣ Upload Photo (if selected)
+    if (photo) {
+      const formData = new FormData();
+      formData.append("file", photo);
+
+      await api.post(
+        `/api/places/${createdPlace.id}/photos`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        }
+      );
     }
-  };
+
+    onSuccess();
+    onClose();
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to add place");
+  }
+};
 
   return (
     <div className="
@@ -160,7 +184,22 @@ p-6
             className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-700 dark:text-white"
           />
 
-          <div className="flex justify-between mt-4">
+          {/* Upload Photo Section */}
+          <div className="mt-4">
+            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-white">
+              Upload Photo
+            </label>
+
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setPhoto(e.target.files[0])}
+              className="w-full text-sm text-gray-400"
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-between mt-6">
             <button
               type="button"
               onClick={onClose}

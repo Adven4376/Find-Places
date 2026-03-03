@@ -59,4 +59,11 @@ public class ReviewServiceImpl implements ReviewService {
         double sum = reviews.stream().mapToInt(PlaceReview::getRating).sum();
         return sum / reviews.size();
     }
+
+    @Override
+    public long getReviewCount(Long placeId) {
+        return reviewRepo.countByPlaceId(placeId);
+    }
+
+
 }

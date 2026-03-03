@@ -13,4 +13,6 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
     List<PlaceReview> findByPlaceId(Long placeId);
 
     long countByPlaceId(Long placeId);
+
+
 }

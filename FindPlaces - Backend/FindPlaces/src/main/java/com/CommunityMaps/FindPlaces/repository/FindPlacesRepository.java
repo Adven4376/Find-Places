@@ -25,6 +25,8 @@ public interface FindPlacesRepository extends JpaRepository<FindPlaces, Long> {
     // manages if we have like 1,00,000 also, soft delete
     Page<FindPlaces> findByStatusIgnoreCaseAndDeletedFalse(String status, Pageable pageable);
 
+    List<FindPlaces> findByNameContainingIgnoreCase(String name);
+
     // Nearby approved places using Haversine formula (distance in KM)
     @Query(value = """
         SELECT p.* FROM places p
@@ -97,4 +99,7 @@ public interface FindPlacesRepository extends JpaRepository<FindPlaces, Long> {
             @Param("radius") double radius,
             @Param("limit") int limit
     );
+
+    @Query("SELECT DISTINCT p.category FROM FindPlaces p")
+    List<String> findDistinctCategories();
 }

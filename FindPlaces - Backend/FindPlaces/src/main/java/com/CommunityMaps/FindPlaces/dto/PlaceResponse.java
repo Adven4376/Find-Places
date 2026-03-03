@@ -9,6 +9,9 @@ public class PlaceResponse {
     private Double longitude;
     private String description;
 
+    private double averageRating;
+    private Long reviewCount;
+
     public PlaceResponse() {}
 
     public PlaceResponse(Long id, String name, String category, Double latitude, Double longitude, String description) {
@@ -67,5 +70,21 @@ public class PlaceResponse {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public double getAverageRating() {
+        return averageRating;
+    }
+
+    public Long getReviewCount() {
+        return reviewCount;
+    }
+
+    public void setReviewCount(Long reviewCount) {
+        this.reviewCount = reviewCount;
+    }
+
+    public void setAverageRating(double averageRating) {
+        this.averageRating = averageRating;
     }
 }

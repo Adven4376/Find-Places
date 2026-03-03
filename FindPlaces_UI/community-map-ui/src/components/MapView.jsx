@@ -13,6 +13,9 @@ import api from "../api/axios";
 import PlaceDetails from "./PlaceDetails";
 import AddPlaceForm from "./AddPlaceForm";
 import NavigationScreen from "./NavigationScreen";
+import { Popup } from "react-leaflet";
+import { useAuth } from "../context/AuthContext";
+import Login from "../pages/Login";
 
 
 /* ---------------- ICON FIX ---------------- */
@@ -66,6 +69,14 @@ export default function MapView() {
 
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  const [aiQuery, setAiQuery] = useState("");
+
+  const [hoveredPlace, setHoveredPlace] = useState(null);
+  const [hoverPhoto, setHoverPhoto] = useState(null);
+
+  const { user } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
+
   useEffect(() => {
     fetchPlaces();
   }, []);
@@ -110,8 +121,26 @@ export default function MapView() {
 );
   }, []);
 
+  const handleHover = async (place) => {
+  setHoveredPlace(place);
+
+  try {
+    const res = await api.get(`/api/photos/place/${place.id}`);
+    if (res.data.length > 0) {
+      setHoverPhoto(res.data[0].url);
+    } else {
+      setHoverPhoto(null);
+    }
+  } catch {
+    setHoverPhoto(null);
+  }
+};
+
   const handleNavigate = async (place) => {
-  if (!navigator.geolocation) return;
+  if (!user) {
+    setShowLogin(true);
+    return;
+  }
 
   navigator.geolocation.getCurrentPosition(async (pos) => {
     try {
@@ -178,6 +207,22 @@ const handleReRoute = async (lat, lng) => {
   }
 };
 
+const searchAI = async () => {
+  try {
+    if (!aiQuery.trim()) return;
+
+    const res = await api.post("/api/ai/search", {
+      query: aiQuery,
+      lat: currentLocation?.lat || null,
+      lng: currentLocation?.lng || null
+    });
+
+    setDisplayedPlaces(res.data);
+  } catch (err) {
+    console.error("AI search failed", err);
+  }
+};
+
   const handleCategorySelect = (cat) => {
     setSelectedCategory(cat);
     setCategoryOpen(false);
@@ -201,8 +246,8 @@ const handleReRoute = async (lat, lng) => {
       setRouteCoords([]);
     }}
     onReRoute={(lat, lng) => {
-      handleNavigate(navigationData.destination);
-    }}
+  handleReRoute(lat, lng);
+}}
   />
   );
 }
@@ -243,6 +288,21 @@ const handleReRoute = async (lat, lng) => {
 
       {/* CATEGORY + SEARCH HEADER */}
       <div className="p-4 bg-white dark:bg-gray-900 shadow-sm">
+        {/* AI Search Bar */}
+        <input
+          type="text"
+          placeholder="Ask anything... (e.g. best PG under 8000)"
+          className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-black dark:text-white"
+          value={aiQuery}
+          onChange={(e) => { setAiQuery(e.target.value)}}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              searchAI();
+            }
+          }}
+        />
+
+        {/* Category Selector */}
         <div className="relative">
           <div
             className="bg-gray-200 dark:bg-gray-800 rounded-lg p-3 cursor-pointer"
@@ -253,29 +313,19 @@ const handleReRoute = async (lat, lng) => {
 
           {categoryOpen && (
             <div className="absolute mt-2 w-full bg-white dark:bg-gray-800 rounded-lg shadow-xl max-h-60 overflow-y-auto z-50">
-              <input
-                type="text"
-                placeholder="Search category..."
-                value={categorySearch}
-                onChange={(e) => setCategorySearch(e.target.value)}
-                className="w-full p-2 border-b dark:bg-gray-700"
-              />
-              {categories
-                .filter((cat) =>
-                  cat.toLowerCase().includes(categorySearch.toLowerCase())
-                )
-                .map((cat) => (
-                  <div
-                    key={cat}
-                    onClick={() => handleCategorySelect(cat)}
-                    className="p-3 hover:bg-blue-100 dark:hover:bg-gray-700 cursor-pointer"
-                  >
-                    {cat}
-                  </div>
-                ))}
+              {categories.map((cat) => (
+                <div
+                  key={cat}
+                  onClick={() => handleCategorySelect(cat)}
+                  className="p-3 hover:bg-blue-100 dark:hover:bg-gray-700 cursor-pointer"
+                >
+                  {cat}
+                </div>
+              ))}
             </div>
           )}
         </div>
+
       </div>
 
       {/* SCROLLABLE PLACE LIST */}
@@ -346,12 +396,48 @@ const handleReRoute = async (lat, lng) => {
       <MarkerClusterGroup chunkedLoading>
         {displayedPlaces.map((place) => (
           <Marker
-            key={place.id}
-            position={[place.latitude, place.longitude]}
-            eventHandlers={{
-              click: () => setSelectedPlace(place)
-            }}
-          />
+          key={place.id}
+          position={[place.latitude, place.longitude]}
+          eventHandlers={{
+            click: () => setSelectedPlace(place),
+            mouseover: () => handleHover(place),
+            mouseout: () => {
+              setHoveredPlace(null);
+              setHoverPhoto(null);
+            }
+          }}
+        >
+          {hoveredPlace?.id === place.id && (
+            <Popup>
+              <div className="w-64">
+
+                {hoverPhoto && (
+                  <img
+                    src={`http://localhost:9090${hoverPhoto}`}
+                    className="w-full h-32 object-cover rounded-lg mb-2"
+                  />
+                )}
+
+                <h3 className="font-semibold text-lg">
+                  {place.name}
+                </h3>
+
+                <p className="text-sm text-gray-500">
+                  {place.category}
+                </p>
+
+                <p className="text-sm mt-1">
+                  ⭐ {place.averageRating || 0} ({place.reviewCount || 0})
+                </p>
+
+                <p className="text-xs mt-2">
+                  {place.description?.slice(0, 100)}...
+                </p>
+
+              </div>
+            </Popup>
+          )}
+        </Marker>
         ))}
       </MarkerClusterGroup>
 
@@ -367,7 +453,13 @@ const handleReRoute = async (lat, lng) => {
 
   {/* Floating Add Button - OUTSIDE map wrapper */}
   <button
-    onClick={() => setShowAddForm(true)}
+    onClick={() => {
+  if (!user) {
+    setShowLogin(true);
+  } else {
+    setShowAddForm(true);
+  }
+}}
     className="
   fixed md:absolute
   bottom-24 md:bottom-10
@@ -402,6 +494,8 @@ const handleReRoute = async (lat, lng) => {
     onSuccess={fetchPlaces}
   />
 )}
+
+
 
   </div>
 );

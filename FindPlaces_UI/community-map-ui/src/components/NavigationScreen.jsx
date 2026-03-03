@@ -16,19 +16,6 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
   useEffect(() => {
   if (!data.steps[currentStepIndex]) return;
 
-  const instruction = data.steps[currentStepIndex].instruction;
-
-  const utterance = new SpeechSynthesisUtterance(instruction);
-  utterance.rate = 1;
-  utterance.pitch = 1;
-
-  window.speechSynthesis.speak(utterance);
-
-}, [currentStepIndex]);
-
-  useEffect(() => {
-  if (!data.steps[currentStepIndex]) return;
-
   const msg = new SpeechSynthesisUtterance(
     data.steps[currentStepIndex].instruction
   );
