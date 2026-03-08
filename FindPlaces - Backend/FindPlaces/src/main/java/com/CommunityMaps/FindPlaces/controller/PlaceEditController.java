@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/places")
-@CrossOrigin(origins = "*")
 public class PlaceEditController {
 
     private final PlaceEditService service;

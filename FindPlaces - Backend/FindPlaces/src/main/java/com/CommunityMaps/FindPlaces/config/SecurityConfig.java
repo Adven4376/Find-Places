@@ -39,7 +39,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // AUTH endpoints
+                        // PUBLIC AUTH
                         .requestMatchers("/api/auth/**").permitAll()
 
                         // ADMIN
@@ -49,16 +49,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/places/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/places/*/photos").permitAll()
 
-                        // REVIEWS
+                        // AUTH REQUIRED
                         .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
-
-                        // PHOTOS
+                        .requestMatchers(HttpMethod.POST, "/api/places/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/places/*/photos").authenticated()
 
-                        // CREATE PLACE
-                        .requestMatchers(HttpMethod.POST, "/api/places/**").authenticated()
-
-                        // STATIC FILES
+                        // FILES
                         .requestMatchers("/uploads/**").permitAll()
 
                         // EVERYTHING ELSE

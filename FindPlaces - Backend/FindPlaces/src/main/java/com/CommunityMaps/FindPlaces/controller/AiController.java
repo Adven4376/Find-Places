@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/ai")
-@CrossOrigin(origins = "*")
 public class AiController {
 
     private final FindPlacesService placeService;

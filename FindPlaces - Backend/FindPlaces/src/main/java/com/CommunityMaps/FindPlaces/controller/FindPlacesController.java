@@ -16,7 +16,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/places")
-@CrossOrigin(origins = "*")
 public class FindPlacesController {
 
     private final FindPlacesService service;

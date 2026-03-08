@@ -83,7 +83,7 @@ export default function MapView() {
 
   const fetchPlaces = async () => {
     try {
-      const res = await api.get("/api/places?size=50");
+      const res = await api.get("/places?size=50");
       setPlaces(res.data.content);
       setDisplayedPlaces(res.data.content);
     } catch (err) {
@@ -125,7 +125,7 @@ export default function MapView() {
   setHoveredPlace(place);
 
   try {
-    const res = await api.get(`/api/photos/place/${place.id}`);
+    const res = await api.get(`/photos/place/${place.id}`);
     if (res.data.length > 0) {
       setHoverPhoto(res.data[0].url);
     } else {
@@ -144,7 +144,7 @@ export default function MapView() {
 
   navigator.geolocation.getCurrentPosition(async (pos) => {
     try {
-      const res = await api.get("/api/directions", {
+      const res = await api.get("/directions", {
         params: {
           fromLat: pos.coords.latitude,
           fromLng: pos.coords.longitude,
@@ -188,7 +188,7 @@ const handleReRoute = async (lat, lng) => {
   if (!navigationData?.destination) return;
 
   try {
-    const res = await api.get("/api/directions", {
+    const res = await api.get("/directions", {
       params: {
         fromLat: lat,
         fromLng: lng,
@@ -211,7 +211,7 @@ const searchAI = async () => {
   try {
     if (!aiQuery.trim()) return;
 
-    const res = await api.post("/api/ai/search", {
+    const res = await api.post("/ai/search", {
       query: aiQuery,
       lat: currentLocation?.lat || null,
       lng: currentLocation?.lng || null
@@ -413,7 +413,7 @@ const searchAI = async () => {
 
                 {hoverPhoto && (
                   <img
-                    src={`http://localhost:9090${hoverPhoto}`}
+                    src={`${import.meta.env.VITE_API_BASE_URL}${hoverPhoto}`}
                     className="w-full h-32 object-cover rounded-lg mb-2"
                   />
                 )}

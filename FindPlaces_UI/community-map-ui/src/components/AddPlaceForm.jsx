@@ -69,7 +69,7 @@ export default function AddPlaceForm({ onClose, onSuccess }) {
   try {
 
     // 1️⃣ Create Place
-    const res = await api.post("/api/places", {
+    const res = await api.post("/places", {
       name: data.name,
       category: data.category.toUpperCase().replace(/\s+/g, "_"),
       latitude: Number(data.latitude),
@@ -85,7 +85,7 @@ export default function AddPlaceForm({ onClose, onSuccess }) {
       formData.append("file", photo);
 
       await api.post(
-        `/api/places/${createdPlace.id}/photos`,
+        `/places/${createdPlace.id}/photos`,
         formData,
         {
           headers: {
