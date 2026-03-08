@@ -16,11 +16,7 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
 
                 registry.addMapping("/**")
-                        .allowedOrigins(
-                                "http://localhost:5173",
-                                "https://find-places-ui-community-maps.vercel.app",
-                                "https://find-places-ui-community-maps-qj2w5ur7o-adven4376-projects.vercel.app"
-                        )
+                        .allowedOriginPatterns("*")   // IMPORTANT FIX
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
