@@ -2,11 +2,17 @@ FROM eclipse-temurin:21-jdk-jammy
 
 WORKDIR /app
 
-# Copy entire project
+# copy project
 COPY . .
 
-# Build jar inside container
+# give mvnw permission
+RUN chmod +x mvnw
+
+# build the jar
 RUN ./mvnw clean package -DskipTests
 
-# Run the built jar
+# expose port
+EXPOSE 8080
+
+# run spring boot
 CMD ["java","-jar","target/FindPlaces-0.0.1-SNAPSHOT.jar"]
