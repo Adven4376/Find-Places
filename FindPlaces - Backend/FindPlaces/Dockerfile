@@ -2,8 +2,11 @@ FROM eclipse-temurin:21-jdk-jammy
 
 WORKDIR /app
 
-COPY target/FindPlaces-0.0.1-SNAPSHOT.jar app.jar
+# Copy entire project
+COPY . .
 
-EXPOSE 8080
+# Build jar inside container
+RUN ./mvnw clean package -DskipTests
 
-ENTRYPOINT ["java","-jar","app.jar"]
+# Run the built jar
+CMD ["java","-jar","target/FindPlaces-0.0.1-SNAPSHOT.jar"]
