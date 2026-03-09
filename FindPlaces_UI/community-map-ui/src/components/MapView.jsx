@@ -103,23 +103,43 @@ export default function MapView() {
   }, [places]);
 
   useEffect(() => {
-    if (!navigator.geolocation) return;
+  if (!navigator.geolocation) return;
 
-    navigator.geolocation.watchPosition(
-  (pos) => {
-    setCurrentLocation({
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-    });
-  },
-  (err) => console.error(err),
-  {
-    enableHighAccuracy: true,   // 🔥 VERY IMPORTANT
-    timeout: 10000,             // 10 sec max wait
-    maximumAge: 60000               // no cached location
-  }
-);
-  }, []);
+  // 1️⃣ Get location immediately
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      setCurrentLocation({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      });
+    },
+    (err) => console.error("Initial location error:", err),
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
+
+  // 2️⃣ Start watching location changes
+  const watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      setCurrentLocation({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      });
+    },
+    (err) => console.error("Watch error:", err),
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
+
+  return () => navigator.geolocation.clearWatch(watchId);
+
+}, []);
 
   const handleHover = async (place) => {
   setHoveredPlace(place);
