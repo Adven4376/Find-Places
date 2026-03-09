@@ -103,42 +103,30 @@ export default function MapView() {
   }, [places]);
 
   useEffect(() => {
-  if (!navigator.geolocation) return;
+  if (!navigator.geolocation) {
+    console.log("Geolocation not supported");
+    return;
+  }
 
-  // 1️⃣ Get location immediately
   navigator.geolocation.getCurrentPosition(
     (pos) => {
+      console.log("LOCATION SUCCESS:", pos.coords);
+
       setCurrentLocation({
         lat: pos.coords.latitude,
         lng: pos.coords.longitude
       });
     },
-    (err) => console.error("Initial location error:", err),
-    {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0
-    }
-  );
-
-  // 2️⃣ Start watching location changes
-  const watchId = navigator.geolocation.watchPosition(
-    (pos) => {
-      setCurrentLocation({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      });
+    (err) => {
+      console.error("LOCATION ERROR:", err.code, err.message);
+      alert("Location access failed: " + err.message);
     },
-    (err) => console.error("Watch error:", err),
     {
       enableHighAccuracy: true,
-      timeout: 15000,
+      timeout: 20000,
       maximumAge: 0
     }
   );
-
-  return () => navigator.geolocation.clearWatch(watchId);
-
 }, []);
 
   const handleHover = async (place) => {
