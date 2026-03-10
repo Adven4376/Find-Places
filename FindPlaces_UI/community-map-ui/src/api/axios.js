@@ -1,14 +1,20 @@
 import axios from "axios";
 
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://find-places-community-maps.onrender.com";
+
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_BASE_URL}/api`
+  baseURL: `${API_BASE}/api`,
 });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
@@ -19,6 +25,7 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
+
     return Promise.reject(error);
   }
 );
