@@ -12,7 +12,7 @@ export default function Login() {
 
   const onSubmit = async (data) => {
     try {
-      const res = await api.post("/api/auth/login", data);
+      const res = await api.post("/auth/login", data);
       login(res.data.token);
       navigate("/");
     } catch {
