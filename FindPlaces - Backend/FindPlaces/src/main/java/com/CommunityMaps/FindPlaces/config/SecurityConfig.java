@@ -39,6 +39,9 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        // VERY IMPORTANT: allow preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // PUBLIC AUTH
                         .requestMatchers("/api/auth/**").permitAll()
 
@@ -73,19 +76,12 @@ public class SecurityConfig {
 
         config.setAllowCredentials(true);
 
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "https://find-places-cyan.vercel.app"
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "https://*.vercel.app"
         ));
 
-        config.setAllowedMethods(List.of(
-                "GET",
-                "POST",
-                "PUT",
-                "DELETE",
-                "OPTIONS"
-        ));
-
+        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
 
         UrlBasedCorsConfigurationSource source =
