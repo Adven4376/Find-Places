@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { ThemeContext } from "../context/ThemeContext";
 
+
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const { dark, toggleTheme } = useContext(ThemeContext);

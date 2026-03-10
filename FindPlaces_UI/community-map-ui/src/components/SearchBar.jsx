@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 
+
 export default function SearchBar({ places, onFiltered }) {
   const [query, setQuery] = useState("");
 

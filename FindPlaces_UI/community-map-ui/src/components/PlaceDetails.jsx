@@ -3,6 +3,7 @@ import api from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
 import { useForm } from "react-hook-form";
 
+
 export default function PlaceDetails({ place, onClose, onNavigate }) {
   const [photos, setPhotos] = useState([]);
   const [reviews, setReviews] = useState([]);
