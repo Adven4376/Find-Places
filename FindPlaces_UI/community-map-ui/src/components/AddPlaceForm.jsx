@@ -65,44 +65,44 @@ export default function AddPlaceForm({ onClose, onSuccess }) {
     );
   }, [setValue]);
 
- const onSubmit = async (data) => {
-  try {
+  const onSubmit = async (data) => {
+    try {
 
-    // 1️⃣ Create Place
-    const res = await api.post("/places", {
-      name: data.name,
-      category: data.category.toUpperCase().replace(/\s+/g, "_"),
-      latitude: Number(data.latitude),
-      longitude: Number(data.longitude),
-      description: data.description
-    });
+      // 1️⃣ Create Place
+      const res = await api.post("/places", {
+        name: data.name,
+        category: data.category.toUpperCase().replace(/\s+/g, "_"),
+        latitude: Number(data.latitude),
+        longitude: Number(data.longitude),
+        description: data.description
+      });
 
-    const createdPlace = res.data;
+      const createdPlace = res.data;
 
-    // 2️⃣ Upload Photo (if selected)
-    if (photo) {
-      const formData = new FormData();
-      formData.append("file", photo);
+      // 2️⃣ Upload Photo (if selected)
+      if (photo) {
+        const formData = new FormData();
+        formData.append("file", photo);
 
-      await api.post(
-        `/places/${createdPlace.id}/photos`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data"
+        await api.post(
+          `/places/${createdPlace.id}/photos`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
           }
-        }
-      );
+        );
+      }
+
+      onSuccess();
+      onClose();
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add place");
     }
-
-    onSuccess();
-    onClose();
-
-  } catch (err) {
-    console.error(err);
-    alert("Failed to add place");
-  }
-};
+  };
 
   return (
     <div className="
@@ -181,14 +181,14 @@ export default function AddPlaceForm({ onClose, onSuccess }) {
               placeholder="Category (e.g. Park)"
               className="w-full px-4 py-3 rounded-xl bg-gray-100/80 dark:bg-black/30 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium shadow-sm"
             />
-             <div className="flex bg-gray-100/80 dark:bg-black/30 rounded-xl px-4 items-center border border-gray-200 dark:border-white/5 shadow-sm">
-                 <input
-                   type="file"
-                   accept="image/*"
-                   onChange={(e) => setPhoto(e.target.files[0])}
-                   className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
-                 />
-             </div>
+            <div className="flex bg-gray-100/80 dark:bg-black/30 rounded-xl px-4 items-center border border-gray-200 dark:border-white/5 shadow-sm">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setPhoto(e.target.files[0])}
+                className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

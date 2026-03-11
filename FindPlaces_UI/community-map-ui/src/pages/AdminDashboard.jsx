@@ -10,17 +10,17 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchPending = async () => {
-    const res = await api.get("/api/admin/places/pending");
+    const res = await api.get("/admin/places/pending");
     setPending(res.data);
   };
 
   const approve = async (id) => {
-    await api.post(`/api/admin/places/${id}/approve`);
+    await api.post(`/admin/places/${id}/approve`);
     fetchPending();
   };
 
   const reject = async (id) => {
-    await api.post(`/api/admin/places/${id}/reject`);
+    await api.post(`/admin/places/${id}/reject`);
     fetchPending();
   };
 

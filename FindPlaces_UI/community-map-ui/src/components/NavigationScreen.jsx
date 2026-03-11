@@ -11,6 +11,22 @@ const navigationIcon = new L.Icon({
   iconAnchor: [20, 20]
 });
 
+/* ---------------- DESTINATION ICON ---------------- */
+
+const destinationIcon = new L.divIcon({
+  className: "custom-destination-pin",
+  html: `
+    <div class="relative flex h-10 w-10 items-center justify-center">
+      <span class="animate-bounce absolute inline-flex h-8 w-8 rounded-full bg-red-500 opacity-60"></span>
+      <svg class="relative w-8 h-8 text-red-600 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+      </svg>
+    </div>
+  `,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40]
+});
+
 /* ---------------- DISTANCE FUNCTION ---------------- */
 
 function haversine(lat1, lon1, lat2, lon2) {
@@ -165,7 +181,11 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
           /* ----- FOLLOW USER ----- */
 
           if (isAutoPanning) {
-            map.flyTo([lat, lng], 16, { animate: true, duration: 1 });
+            map.flyTo([lat, lng], 18, {
+              animate: true,
+              duration: 2.5, // much smoother and longer transition
+              easeLinearity: 0.1
+            });
           }
 
           /* ----- REROUTE DETECTION ----- */
@@ -224,11 +244,11 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100 dark:bg-[#0f172a]">
+    <div className="h-screen pt-[80px] md:pt-[100px] flex flex-col bg-gray-100 dark:bg-[#0f172a]">
 
       {/* HEADER */}
 
-      <div className="bg-white dark:bg-[#0b1120] shadow-md p-4 flex justify-between items-center">
+      <div className="bg-white dark:bg-[#0b1120] shadow-md px-4 py-3 flex flex-wrap justify-between items-center gap-2">
 
         <button onClick={onExit} className="text-red-500 font-semibold">
           Back
@@ -326,10 +346,10 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <Polyline positions={routeCoords} color="blue" />
+          <Polyline positions={routeCoords} color="blue" weight={6} opacity={0.7} />
 
-          <Marker position={routeCoords[0]} />
-          <Marker position={routeCoords[routeCoords.length - 1]} />
+          {/* Remove duplicate logic that generates fixed blue current marker from Map component, since FollowUser already renders it */}
+          <Marker position={routeCoords[routeCoords.length - 1]} icon={destinationIcon} />
 
         </MapContainer>
 
@@ -346,8 +366,8 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
           <div
             key={index}
             className={`p-3 mb-2 rounded-lg transition-all duration-300 ${index === currentStepIndex
-                ? "bg-blue-600 text-white shadow-lg scale-105"
-                : "bg-gray-100 dark:bg-white/5"
+              ? "bg-blue-600 text-white shadow-lg scale-105"
+              : "bg-gray-100 dark:bg-white/5"
               }`}
           >
 

@@ -28,9 +28,9 @@ export default function PlaceDetails({ place, onClose, onNavigate }) {
   const fetchDetails = async () => {
     try {
       const [photoRes, reviewRes, avgRes] = await Promise.all([
-        api.get(`/api/places/${place.id}/photos`),
-        api.get(`/api/reviews/place/${place.id}`),
-        api.get(`/api/reviews/place/${place.id}/average`)
+        api.get(`/places/${place.id}/photos`),
+        api.get(`/reviews/place/${place.id}`),
+        api.get(`/reviews/place/${place.id}/average`)
       ]);
 
       setPhotos(photoRes.data);
@@ -47,7 +47,7 @@ export default function PlaceDetails({ place, onClose, onNavigate }) {
       return;
     }
     try {
-      await api.post("/api/reviews", {
+      await api.post("/reviews", {
         placeId: place.id,
         rating: Number(data.rating),
         comment: data.comment

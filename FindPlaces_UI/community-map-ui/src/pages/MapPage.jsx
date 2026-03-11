@@ -14,7 +14,7 @@ export default function MapPage() {
 
   const fetchPlaces = async (pageNumber) => {
     try {
-      const res = await api.get(`/api/places?page=${pageNumber}&size=20`);
+      const res = await api.get(`/places?page=${pageNumber}&size=20`);
       setPlaces(res.data.content);
       setTotalPages(res.data.totalPages);
     } catch (err) {
