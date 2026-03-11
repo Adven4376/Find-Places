@@ -86,86 +86,94 @@ export default function PlaceDetails({ place, onClose, onNavigate }) {
       <div
         className="
           fixed
-          top-0
-          right-0
-          h-full
-          w-[420px]
-          bg-white dark:bg-[#0b1120]
-          border-l border-gray-200 dark:border-white/10
+          top-4
+          bottom-4
+          right-4
+          w-[95%] md:w-[420px]
+          bg-white/80 dark:bg-[#0b1120]/80
+          backdrop-blur-3xl
+          border border-white/20 dark:border-white/10
+          rounded-3xl
           shadow-2xl
           overflow-y-auto
           z-[9999]
-          p-8
+          p-6 md:p-8
+          custom-scrollbar
           transition-transform duration-300
         "
       >
         <button
           onClick={onClose}
-          className="text-red-500 mb-6 font-semibold hover:underline"
+          className="text-gray-400 hover:text-red-500 mb-6 font-bold tracking-wider text-sm uppercase transition-colors"
         >
-          Close
+          ✕ Close
         </button>
 
-        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
+        <h2 className="text-3xl font-extrabold mb-2 tracking-tight text-gray-900 dark:text-white">
           {place.name}
         </h2>
 
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
           {place.description}
         </p>
 
-        <div className="mb-4 font-semibold text-yellow-500">
-          ⭐ Average Rating: {average ? average.toFixed(1) : "0.0"}
+        <div className="mb-6 font-semibold inline-flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 px-3 py-1.5 rounded-full text-sm">
+          <span>⭐</span>
+          <span>Average Rating: {average ? average.toFixed(1) : "0.0"}</span>
         </div>
 
         <button
           onClick={() => onNavigate(place)}
-          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:scale-[1.02] text-white py-3 rounded-lg mb-6 transition-all"
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98] text-white font-bold py-3.5 rounded-xl mb-8 transition-all duration-300 flex items-center justify-center gap-2"
         >
-          Navigate
+          <span>📍</span> Navigate Here
         </button>
 
         {/* Photos */}
         {photos.length > 0 && (
-  <>
-    <h3 className="font-semibold mb-3">Photos</h3>
+          <>
+            <h3 className="font-bold text-lg mb-4 text-gray-800 dark:text-gray-200 tracking-tight">Gallery</h3>
 
-    <div className="grid grid-cols-2 gap-4 mb-6">
-      {photos.map(photo => (
-        <img
-          key={photo.id}
-          src={`http://localhost:9090${photo.url}`}
-          alt=""
-          onClick={() =>
-            setPreviewImage(`http://localhost:9090${photo.url}`)
-          }
-          className="rounded-xl w-full h-40 object-contain bg-black/10 cursor-pointer hover:scale-105 transition-all duration-300"
-        />
-      ))}
-    </div>
-  </>
-)}
+            <div className="columns-2 gap-3 mb-8 space-y-3">
+              {photos.map(photo => (
+                <img
+                  key={photo.id}
+                  src={`http://localhost:9090${photo.url}`}
+                  alt=""
+                  onClick={() =>
+                    setPreviewImage(`http://localhost:9090${photo.url}`)
+                  }
+                  className="rounded-2xl w-full object-cover shadow-sm bg-gray-100 dark:bg-black/20 cursor-pointer hover:shadow-xl hover:scale-[1.03] transition-all duration-300 break-inside-avoid border border-white/20 dark:border-white/5"
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Reviews */}
-        <h3 className="font-semibold mb-3 text-gray-800 dark:text-white">
-          Reviews
+        <h3 className="font-bold text-lg mb-4 text-gray-800 dark:text-gray-200 tracking-tight">
+          Community Reviews
         </h3>
 
-        <div className="space-y-3 mb-6">
+        <div className="space-y-4 mb-8">
           {reviews.length === 0 && (
-            <p className="text-sm text-gray-500">
-              No reviews yet.
-            </p>
+            <div className="text-center p-6 bg-gray-50/50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5">
+              <p className="text-sm text-gray-500 font-medium">No reviews yet. Be the first!</p>
+            </div>
           )}
 
           {reviews.map(r => (
             <div
               key={r.id}
-              className="bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 rounded-xl"
+              className="bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/5 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
             >
-              <p className="font-medium">{r.username}</p>
-              <p className="text-yellow-500 text-sm">⭐ {r.rating}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
+              <div className="flex justify-between items-start mb-2">
+                <p className="font-bold text-gray-900 dark:text-white">{r.username}</p>
+                <span className="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                  ⭐ <span className="pt-0.5">{r.rating}</span>
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                 {r.comment}
               </p>
             </div>
@@ -176,27 +184,29 @@ export default function PlaceDetails({ place, onClose, onNavigate }) {
         {user && (
           <form
             onSubmit={handleSubmit(submitReview)}
-            className="space-y-4"
+            className="space-y-4 bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-2xl border border-blue-100 dark:border-blue-900/30"
           >
+            <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-2">Leave a Rating</h4>
+            
             <select
               {...register("rating")}
-              className="w-full border p-2 rounded-lg dark:bg-gray-800 dark:border-gray-700"
+              className="w-full border border-gray-200 dark:border-white/5 p-3 rounded-xl bg-white/80 dark:bg-black/40 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
             >
-              <option value="5">5 ⭐</option>
-              <option value="4">4 ⭐</option>
-              <option value="3">3 ⭐</option>
-              <option value="2">2 ⭐</option>
-              <option value="1">1 ⭐</option>
+              <option value="5">5 ⭐ Amazing</option>
+              <option value="4">4 ⭐ Good</option>
+              <option value="3">3 ⭐ Average</option>
+              <option value="2">2 ⭐ Poor</option>
+              <option value="1">1 ⭐ Terrible</option>
             </select>
 
             <textarea
               {...register("comment")}
-              placeholder="Write review..."
-              className="w-full border p-2 rounded-lg dark:bg-gray-800 dark:border-gray-700"
+              placeholder="Share your experience..."
+              className="w-full border border-gray-200 dark:border-white/5 p-3 rounded-xl bg-white/80 dark:bg-black/40 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all min-h-[100px] resize-none"
             />
 
-            <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition">
-              Submit Review
+            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all active:scale-[0.98]">
+              Submit Feedback
             </button>
           </form>
         )}

@@ -106,33 +106,48 @@ export default function AddPlaceForm({ onClose, onSuccess }) {
 
   return (
     <div className="
-fixed inset-0
-bg-black/40 backdrop-blur-sm
-flex items-center justify-center
-z-[6000]
-">
+      fixed inset-0
+      bg-gray-900/60 dark:bg-black/80 backdrop-blur-md
+      flex items-center justify-center
+      z-[6000] p-4
+    ">
       <div className="
-bg-white dark:bg-[#1f2937]
-rounded-2xl
-shadow-2xl
-w-[95%] md:w-[600px]
-max-h-[90vh]
-overflow-y-auto
-p-6
-">
+        relative
+        bg-white/90 dark:bg-[#0b1120]/90 backdrop-blur-2xl
+        rounded-3xl
+        shadow-[0_0_50px_rgba(0,0,0,0.2)] dark:shadow-[0_0_50px_rgba(0,0,0,0.5)]
+        border border-white/20 dark:border-white/10
+        w-full md:w-[600px]
+        max-h-[90vh]
+        overflow-y-auto custom-scrollbar
+        p-8
+      ">
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 text-gray-400 hover:text-red-500 font-bold transition-colors text-xl"
+        >
+          ✕
+        </button>
 
-        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-          Add New Place
-        </h2>
+        <div className="text-center mb-6 space-y-2">
+          <h2 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+            Publish a Location
+          </h2>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            Drag the pin to select coordinates, then fill out the details.
+          </p>
+        </div>
 
         {loadingLocation && (
-          <p className="text-sm text-blue-500 mb-2">
-            Detecting location...
-          </p>
+          <div className="flex justify-center items-center py-4">
+            <span className="text-sm font-semibold text-blue-500/80 animate-pulse">
+              📍 Acquiring GPS signal...
+            </span>
+          </div>
         )}
 
         {position && (
-          <div className="h-64 mb-4 rounded overflow-hidden">
+          <div className="h-[200px] mb-6 rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 shadow-inner brightness-95 dark:brightness-90">
             <MapContainer
               center={[position.lat, position.lng]}
               zoom={15}
@@ -152,67 +167,64 @@ p-6
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
           <input
             {...register("name")}
             placeholder="Place Name"
-            className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-700 dark:text-white"
+            className="w-full px-4 py-3 rounded-xl bg-gray-100/80 dark:bg-black/30 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium shadow-sm"
           />
 
-          <input
-            {...register("category")}
-            placeholder="Category"
-            className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-700 dark:text-white"
-          />
-
-          <input
-            {...register("latitude")}
-            placeholder="Latitude"
-            className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-700 dark:text-white"
-          />
-
-          <input
-            {...register("longitude")}
-            placeholder="Longitude"
-            className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-700 dark:text-white"
-          />
-
-          <textarea
-            {...register("description")}
-            placeholder="Description"
-            className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-700 dark:text-white"
-          />
-
-          {/* Upload Photo Section */}
-          <div className="mt-4">
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-white">
-              Upload Photo
-            </label>
-
+          <div className="grid grid-cols-2 gap-4">
             <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setPhoto(e.target.files[0])}
-              className="w-full text-sm text-gray-400"
+              {...register("category")}
+              placeholder="Category (e.g. Park)"
+              className="w-full px-4 py-3 rounded-xl bg-gray-100/80 dark:bg-black/30 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium shadow-sm"
+            />
+             <div className="flex bg-gray-100/80 dark:bg-black/30 rounded-xl px-4 items-center border border-gray-200 dark:border-white/5 shadow-sm">
+                 <input
+                   type="file"
+                   accept="image/*"
+                   onChange={(e) => setPhoto(e.target.files[0])}
+                   className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer"
+                 />
+             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              {...register("latitude")}
+              placeholder="Latitude"
+              className="w-full px-4 py-3 rounded-xl bg-gray-100/80 dark:bg-black/30 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-mono shadow-sm"
+            />
+            <input
+              {...register("longitude")}
+              placeholder="Longitude"
+              className="w-full px-4 py-3 rounded-xl bg-gray-100/80 dark:bg-black/30 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-mono shadow-sm"
             />
           </div>
 
+          <textarea
+            {...register("description")}
+            placeholder="Share what makes this place special..."
+            className="w-full px-4 py-3 rounded-xl bg-gray-100/80 dark:bg-black/30 border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium shadow-sm min-h-[100px] resize-none"
+          />
+
           {/* Buttons */}
-          <div className="flex justify-between mt-6">
+          <div className="flex justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-400 text-white rounded"
+              className="w-full py-3.5 bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 text-gray-800 dark:text-white font-bold rounded-xl transition-all"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded"
+              className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
-              Submit
+              Submit Place
             </button>
           </div>
         </form>

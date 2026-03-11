@@ -25,8 +25,8 @@ function haversine(lat1, lon1, lat2, lon2) {
   const a =
     Math.sin(Δφ / 2) ** 2 +
     Math.cos(φ1) *
-      Math.cos(φ2) *
-      Math.sin(Δλ / 2) ** 2;
+    Math.cos(φ2) *
+    Math.sin(Δλ / 2) ** 2;
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -36,6 +36,7 @@ function haversine(lat1, lon1, lat2, lon2) {
 /* ---------------- BEARING FUNCTION ---------------- */
 
 function calculateBearing(lat1, lng1, lat2, lng2) {
+
   const toRad = (deg) => deg * Math.PI / 180;
   const toDeg = (rad) => rad * 180 / Math.PI;
 
@@ -46,8 +47,8 @@ function calculateBearing(lat1, lng1, lat2, lng2) {
   const x =
     Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
     Math.sin(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.cos(dLon);
+    Math.cos(toRad(lat2)) *
+    Math.cos(dLon);
 
   const brng = Math.atan2(y, x);
 
@@ -56,10 +57,14 @@ function calculateBearing(lat1, lng1, lat2, lng2) {
 
 /* ---------------- MAIN COMPONENT ---------------- */
 
-export default function NavigationScreen({ data, routeCoords, onExit, onReRoute }) {
+export default function NavigationScreen({ data, routeCoords, onExit, onReRoute, travelMode, onTravelModeChange }) {
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [speed, setSpeed] = useState(0);
+
+  const [muted, setMuted] = useState(false);
+  const [isAutoPanning, setIsAutoPanning] = useState(true);
+  const [hasArrived, setHasArrived] = useState(false);
 
   function FollowUser({
     routeCoords,
@@ -81,9 +86,11 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
     useEffect(() => {
 
       const handleOrientation = (event) => {
+
         if (event.alpha !== null) {
           setHeading(event.alpha);
         }
+
       };
 
       window.addEventListener("deviceorientationabsolute", handleOrientation);
@@ -101,6 +108,8 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
 
       if (spokenStepRef.current === currentStepIndex) return;
 
+      if (muted) return;
+
       speechSynthesis.cancel();
 
       const msg = new SpeechSynthesisUtterance(
@@ -114,7 +123,7 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
 
       spokenStepRef.current = currentStepIndex;
 
-    }, [currentStepIndex, data.steps]);
+    }, [currentStepIndex, data.steps, muted]);
 
     useEffect(() => {
       return () => speechSynthesis.cancel();
@@ -155,19 +164,18 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
 
           /* ----- FOLLOW USER ----- */
 
-          map.flyTo([lat, lng], 16, { duration: 1 });
+          if (isAutoPanning) {
+            map.flyTo([lat, lng], 16, { animate: true, duration: 1 });
+          }
 
           /* ----- REROUTE DETECTION ----- */
 
           const isNearRoute = routeCoords.some(([rLat, rLng]) => {
-
             const dist = haversine(lat, lng, rLat, rLng);
-
             return dist < 50;
-
           });
 
-          if (!isNearRoute) {
+          if (!isNearRoute && !hasArrived) {
             onDeviation(lat, lng);
           }
 
@@ -176,17 +184,18 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
           const currentStep = data.steps[currentStepIndex];
 
           if (currentStep) {
-
             const [stepLng, stepLat] = currentStep.location;
-
             const distance = haversine(lat, lng, stepLat, stepLng);
 
-            if (distance < 40) {
+            // Arrival check
+            if (currentStepIndex === data.steps.length - 1 && distance < 30) {
+              setHasArrived(true);
+            }
 
+            if (distance < 40) {
               setCurrentStepIndex((prev) =>
                 prev < data.steps.length - 1 ? prev + 1 : prev
               );
-
             }
           }
 
@@ -225,15 +234,41 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
           Back
         </button>
 
-        <div className="text-center">
-          <div className="text-sm text-gray-500">Distance</div>
-          <div className="font-semibold">{data.distance}</div>
+        <div className="flex gap-3">
+
+          {/* TRAVEL MODE */}
+
+          <button
+            onClick={() => onTravelModeChange("DRIVE")}
+            className={`px-3 py-1 rounded transition-colors ${travelMode === "DRIVE" ? "bg-blue-600 text-white shadow" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+          >
+            🚗
+          </button>
+
+          <button
+            onClick={() => onTravelModeChange("TWO_WHEELER")}
+            className={`px-3 py-1 rounded transition-colors ${travelMode === "TWO_WHEELER" ? "bg-blue-600 text-white shadow" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+          >
+            🏍
+          </button>
+
+          <button
+            onClick={() => onTravelModeChange("WALK")}
+            className={`px-3 py-1 rounded transition-colors ${travelMode === "WALK" ? "bg-blue-600 text-white shadow" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+          >
+            🚶
+          </button>
+
         </div>
 
-        <div className="text-center">
-          <div className="text-sm text-gray-500">ETA</div>
-          <div className="font-semibold">{data.duration}</div>
-        </div>
+        {/* MUTE BUTTON */}
+
+        <button
+          onClick={() => setMuted(!muted)}
+          className="text-xl"
+        >
+          {muted ? "🔇" : "🔊"}
+        </button>
 
         <div className="text-center">
           <div className="text-sm text-gray-500">Speed</div>
@@ -246,20 +281,37 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
 
       <div className="flex-1 relative">
 
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[5000]">
-
-          {data.steps[currentStepIndex] && (
-            <div className="bg-black/80 text-white px-6 py-3 rounded-2xl shadow-xl text-lg backdrop-blur-lg">
-              {data.steps[currentStepIndex].instruction}
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[5000] w-[90%] md:w-auto">
+          {hasArrived ? (
+            <div className="bg-emerald-500 text-white px-8 py-4 rounded-2xl shadow-2xl text-xl font-bold text-center border-4 border-emerald-400 animate-bounce">
+              🎉 You have arrived!
             </div>
-          )}
-
+          ) : data.steps[currentStepIndex] ? (
+            <div className="bg-black/85 text-white px-6 py-4 rounded-2xl shadow-xl backdrop-blur-md flex items-center justify-between gap-4">
+              <span className="text-lg font-medium tracking-wide">
+                {data.steps[currentStepIndex].instruction}
+              </span>
+              <span className="text-blue-400 font-bold whitespace-nowrap">
+                {data.steps[currentStepIndex].distance}
+              </span>
+            </div>
+          ) : null}
         </div>
+
+        {!isAutoPanning && !hasArrived && (
+          <button
+            onClick={() => setIsAutoPanning(true)}
+            className="absolute bottom-6 right-6 z-[5000] bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-full shadow-2xl font-bold tracking-wide transition-all duration-300 flex items-center gap-2"
+          >
+            📍 Recenter
+          </button>
+        )}
 
         <MapContainer
           center={routeCoords[0]}
           zoom={14}
           className="h-full w-full"
+          onDragstart={() => setIsAutoPanning(false)}
         >
 
           <FollowUser
@@ -293,11 +345,10 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute 
 
           <div
             key={index}
-            className={`p-3 mb-2 rounded-lg transition-all duration-300 ${
-              index === currentStepIndex
+            className={`p-3 mb-2 rounded-lg transition-all duration-300 ${index === currentStepIndex
                 ? "bg-blue-600 text-white shadow-lg scale-105"
                 : "bg-gray-100 dark:bg-white/5"
-            }`}
+              }`}
           >
 
             <div className="text-sm font-medium">
