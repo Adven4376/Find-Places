@@ -5,10 +5,17 @@ import L from "leaflet";
 
 /* ---------------- NAVIGATION ICON ---------------- */
 
-const navigationIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
-  iconSize: [40, 40],
-  iconAnchor: [20, 20]
+const navigationIcon = new L.divIcon({
+  className: "bg-transparent border-none",
+  html: `
+    <div style="display:flex; justify-content:center; align-items:center; filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.5)); transform: translateY(-4px);">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3L4 21L12 17L20 21L12 3Z" fill="#4285F4" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  `,
+  iconSize: [48, 48],
+  iconAnchor: [24, 24]
 });
 
 /* ---------------- DESTINATION ICON ---------------- */
@@ -181,7 +188,7 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
           /* ----- FOLLOW USER ----- */
 
           if (isAutoPanning) {
-            map.flyTo([lat, lng], 18, {
+            map.flyTo([lat, lng], 16, {
               animate: true,
               duration: 2.5, // much smoother and longer transition
               easeLinearity: 0.1
