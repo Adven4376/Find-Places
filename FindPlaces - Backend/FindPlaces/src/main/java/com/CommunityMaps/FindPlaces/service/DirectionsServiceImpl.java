@@ -15,11 +15,22 @@ public class DirectionsServiceImpl implements DirectionsService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
-    public DirectionResponse getRoute(double fromLat, double fromLng, double toLat, double toLng) {
+    public DirectionResponse getRoute(double fromLat, double fromLng, double toLat, double toLng, String mode) {
+
+        // Map frontend modes to OSRM profiles
+        String osrmProfile = "driving";
+        if (mode != null) {
+            if (mode.equalsIgnoreCase("TWO_WHEELER") || mode.equalsIgnoreCase("bike") || mode.equalsIgnoreCase("cycling")) {
+                osrmProfile = "cycling"; // note: OSRM public sometimes uses 'bike' sometimes 'cycling', usually 'driving', 'bike', 'foot' or 'driving', 'cycling', 'walking'. Wait, OSRM standard is 'driving', 'bike', 'foot'. I will use 'bike'.
+                osrmProfile = "bike";
+            } else if (mode.equalsIgnoreCase("WALK") || mode.equalsIgnoreCase("foot") || mode.equalsIgnoreCase("walking")) {
+                osrmProfile = "foot";
+            }
+        }
 
         String url = String.format(
-                "https://router.project-osrm.org/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=polyline&steps=true",
-                fromLng, fromLat, toLng, toLat
+                "https://router.project-osrm.org/route/v1/%s/%f,%f;%f,%f?overview=full&geometries=polyline&steps=true",
+                osrmProfile, fromLng, fromLat, toLng, toLat
         );
 
         Map<String, Object> response = restTemplate.getForObject(url, Map.class);

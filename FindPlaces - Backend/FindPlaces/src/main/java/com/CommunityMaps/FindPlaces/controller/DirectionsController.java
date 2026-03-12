@@ -19,8 +19,9 @@ public class DirectionsController {
             @RequestParam double fromLat,
             @RequestParam double fromLng,
             @RequestParam double toLat,
-            @RequestParam double toLng
+            @RequestParam double toLng,
+            @RequestParam(required = false, defaultValue = "driving") String mode
     ) {
-        return service.getRoute(fromLat, fromLng, toLat, toLng);
+        return service.getRoute(fromLat, fromLng, toLat, toLng, mode);
     }
 }

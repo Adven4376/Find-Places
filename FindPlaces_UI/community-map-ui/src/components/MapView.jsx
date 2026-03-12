@@ -179,7 +179,7 @@ export default function MapView() {
     }
   };
 
-  const handleNavigate = async (place) => {
+  const handleNavigate = async (place, mode = travelMode) => {
     if (!user) {
       setShowLogin(true);
       return;
@@ -192,7 +192,8 @@ export default function MapView() {
             fromLat: pos.coords.latitude,
             fromLng: pos.coords.longitude,
             toLat: place.latitude,
-            toLng: place.longitude
+            toLng: place.longitude,
+            mode: mode
           }
         });
 
@@ -236,7 +237,8 @@ export default function MapView() {
           fromLat: lat,
           fromLng: lng,
           toLat: navigationData.destination.latitude,
-          toLng: navigationData.destination.longitude
+          toLng: navigationData.destination.longitude,
+          mode: travelMode
         }
       });
 
@@ -314,6 +316,11 @@ export default function MapView() {
         }}
         onReRoute={(lat, lng) => {
           handleReRoute(lat, lng);
+        }}
+        travelMode={travelMode}
+        onTravelModeChange={(mode) => {
+          setTravelMode(mode);
+          handleNavigate(navigationData.destination, mode);
         }}
       />
     );

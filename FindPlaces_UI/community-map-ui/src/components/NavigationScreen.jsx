@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Polyline, Marker, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline, Marker, useMap, useMapEvents } from "react-leaflet";
 import { useEffect, useRef, useState } from "react";
 import "leaflet-rotatedmarker";
 import L from "leaflet";
@@ -88,6 +88,16 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
   const [muted, setMuted] = useState(false);
   const [isAutoPanning, setIsAutoPanning] = useState(true);
   const [hasArrived, setHasArrived] = useState(false);
+
+  function MapEventsHandler() {
+    useMapEvents({
+      dragstart: () => setIsAutoPanning(false),
+      touchstart: () => setIsAutoPanning(false),
+      mousedown: () => setIsAutoPanning(false),
+      wheel: () => setIsAutoPanning(false)
+    });
+    return null;
+  }
 
   function FollowUser({
     routeCoords,
@@ -188,10 +198,10 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
           /* ----- FOLLOW USER ----- */
 
           if (isAutoPanning) {
-            map.flyTo([lat, lng], 16, {
+            map.panTo([lat, lng], {
               animate: true,
-              duration: 2.5, // much smoother and longer transition
-              easeLinearity: 0.1
+              duration: 1.5,
+              easeLinearity: 0.2
             });
           }
 
@@ -336,10 +346,10 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
 
         <MapContainer
           center={routeCoords[0]}
-          zoom={14}
+          zoom={16}
           className="h-full w-full"
-          onDragstart={() => setIsAutoPanning(false)}
         >
+          <MapEventsHandler />
 
           <FollowUser
             routeCoords={routeCoords}
@@ -349,11 +359,28 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
           />
 
           <TileLayer
-            attribution="© OpenStreetMap contributors"
+            attribution="&copy; OpenStreetMap contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          <Polyline positions={routeCoords} color="blue" weight={6} opacity={0.7} />
+          {/* Outer Border for smoother Google Maps-like Polyline */}
+          <Polyline 
+            positions={routeCoords} 
+            color="#2A5CAD" 
+            weight={10} 
+            opacity={0.8}
+            lineCap="round" 
+            lineJoin="round" 
+          />
+          {/* Inner Fill */}
+          <Polyline 
+            positions={routeCoords} 
+            color="#4285F4" 
+            weight={6} 
+            opacity={1}
+            lineCap="round" 
+            lineJoin="round" 
+          />
 
           {/* Remove duplicate logic that generates fixed blue current marker from Map component, since FollowUser already renders it */}
           <Marker position={routeCoords[routeCoords.length - 1]} icon={destinationIcon} />
