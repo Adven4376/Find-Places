@@ -259,7 +259,7 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
           <button onClick={onExit} className="text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-500/10 px-4 py-2 flex items-center justify-center rounded-xl border border-red-100 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/30 transition-colors shrink-0">
             Exit
           </button>
-          
+
           <div className="flex flex-col">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-0.5 line-clamp-1">
               To {data?.destination?.name || "Destination"}
@@ -279,44 +279,44 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
 
             {/* TRAVEL MODE */}
 
-          <button
-            onClick={() => onTravelModeChange("DRIVE")}
-            className={`px-3 py-1 rounded transition-colors ${travelMode === "DRIVE" ? "bg-blue-600 text-white shadow" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-          >
-            🚗
-          </button>
+            <button
+              onClick={() => onTravelModeChange("DRIVE")}
+              className={`px-3 py-1 rounded transition-colors ${travelMode === "DRIVE" ? "bg-blue-600 text-white shadow" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+            >
+              🚗
+            </button>
+
+            <button
+              onClick={() => onTravelModeChange("TWO_WHEELER")}
+              className={`px-3 py-1 rounded transition-colors ${travelMode === "TWO_WHEELER" ? "bg-blue-600 text-white shadow" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+            >
+              🏍
+            </button>
+
+            <button
+              onClick={() => onTravelModeChange("WALK")}
+              className={`px-3 py-1 rounded transition-colors ${travelMode === "WALK" ? "bg-blue-600 text-white shadow" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+            >
+              🚶
+            </button>
+
+          </div>
+
+          {/* MUTE BUTTON */}
 
           <button
-            onClick={() => onTravelModeChange("TWO_WHEELER")}
-            className={`px-3 py-1 rounded transition-colors ${travelMode === "TWO_WHEELER" ? "bg-blue-600 text-white shadow" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+            onClick={() => setMuted(!muted)}
+            className="text-xl"
           >
-            🏍
+            {muted ? "🔇" : "🔊"}
           </button>
 
-          <button
-            onClick={() => onTravelModeChange("WALK")}
-            className={`px-3 py-1 rounded transition-colors ${travelMode === "WALK" ? "bg-blue-600 text-white shadow" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-          >
-            🚶
-          </button>
+          <div className="text-center">
+            <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Speed</div>
+            <div className="font-bold text-gray-900 dark:text-white tabular-nums">{speed} <span className="text-xs text-gray-500">km/h</span></div>
+          </div>
 
         </div>
-
-        {/* MUTE BUTTON */}
-
-        <button
-          onClick={() => setMuted(!muted)}
-          className="text-xl"
-        >
-          {muted ? "🔇" : "🔊"}
-        </button>
-
-        <div className="text-center">
-          <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Speed</div>
-          <div className="font-bold text-gray-900 dark:text-white tabular-nums">{speed} <span className="text-xs text-gray-500">km/h</span></div>
-        </div>
-
-      </div>
 
       </div>
 
@@ -376,22 +376,22 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
           />
 
           {/* Outer Border for smoother Google Maps-like Polyline */}
-          <Polyline 
-            positions={routeCoords} 
-            color="#2A5CAD" 
-            weight={10} 
+          <Polyline
+            positions={routeCoords}
+            color="#2A5CAD"
+            weight={10}
             opacity={0.8}
-            lineCap="round" 
-            lineJoin="round" 
+            lineCap="round"
+            lineJoin="round"
           />
           {/* Inner Fill */}
-          <Polyline 
-            positions={routeCoords} 
-            color="#4285F4" 
-            weight={6} 
+          <Polyline
+            positions={routeCoords}
+            color="#4285F4"
+            weight={6}
             opacity={1}
-            lineCap="round" 
-            lineJoin="round" 
+            lineCap="round"
+            lineJoin="round"
           />
 
           {/* Remove duplicate logic that generates fixed blue current marker from Map component, since FollowUser already renders it */}

@@ -185,47 +185,56 @@ export default function MapView() {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      try {
-        const res = await api.get("/directions", {
-          params: {
-            fromLat: pos.coords.latitude,
-            fromLng: pos.coords.longitude,
-            toLat: place.latitude,
-            toLng: place.longitude,
-            mode: mode
-          }
-        });
+    if (!currentLocation) {
+      console.warn("Current location not available yet.");
+      // Fallback in case state isn't populated yet
+      navigator.geolocation.getCurrentPosition(
+        (pos) => fetchNavigationRoute(pos.coords.latitude, pos.coords.longitude, place, mode),
+        (err) => console.error("Could not get location:", err)
+      );
+      return;
+    }
 
-        const decoded = polyline.decode(res.data.polyline);
-        const latLngs = decoded.map(([lat, lng]) => [lat, lng]);
-        setRouteCoords(latLngs);
+    await fetchNavigationRoute(currentLocation.lat, currentLocation.lng, place, mode);
+  };
 
-        // 🔥 EXTRACT STEPS FROM RAW
-        const rawSteps =
-          res.data.raw?.routes?.[0]?.legs?.[0]?.steps || [];
+  const fetchNavigationRoute = async (fromLat, fromLng, place, mode) => {
+    try {
+      const res = await api.get("/directions", {
+        params: {
+          fromLat: fromLat,
+          fromLng: fromLng,
+          toLat: place.latitude,
+          toLng: place.longitude,
+          mode: mode
+        }
+      });
 
-        const formattedSteps = res.data.steps.map((step) => ({
-          instruction: step.instruction,
-          distance: (step.distanceMeters / 1000).toFixed(2) + " km",
-          duration: (step.durationSeconds / 60).toFixed(1) + " mins",
-          geometry: step.geometry,
-          location: step.maneuverLocation
-        }));
+      const decoded = polyline.decode(res.data.polyline);
+      const latLngs = decoded.map(([lat, lng]) => [lat, lng]);
+      setRouteCoords(latLngs);
 
-        setNavigationData({
-          distance: res.data.distanceKm.toFixed(2) + " km",
-          duration: res.data.durationMinutes.toFixed(0) + " mins",
-          steps: formattedSteps,
-          destination: place
-        });
+      // 🔥 EXTRACT STEPS FROM RAW
+      const formattedSteps = res.data.steps.map((step) => ({
+        instruction: step.instruction,
+        distance: (step.distanceMeters / 1000).toFixed(2) + " km",
+        duration: (step.durationSeconds / 60).toFixed(1) + " mins",
+        geometry: step.geometry,
+        location: step.maneuverLocation
+      }));
 
-        setNavigationMode(true);
+      setNavigationData({
+        distance: res.data.distanceKm.toFixed(2) + " km",
+        duration: res.data.durationMinutes.toFixed(0) + " mins",
+        steps: formattedSteps,
+        destination: place
+      });
 
-      } catch (err) {
-        console.error("Failed to fetch route", err);
-      }
-    });
+      setNavigationMode(true);
+
+    } catch (err) {
+      console.error("Failed to fetch route", err);
+    }
   };
 
   const handleReRoute = async (lat, lng) => {

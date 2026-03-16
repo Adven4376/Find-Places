@@ -21,7 +21,7 @@ public class DirectionsServiceImpl implements DirectionsService {
         String osrmProfile = "driving";
         if (mode != null) {
             if (mode.equalsIgnoreCase("TWO_WHEELER") || mode.equalsIgnoreCase("bike") || mode.equalsIgnoreCase("cycling")) {
-                osrmProfile = "cycling"; 
+                osrmProfile = "bike"; 
             } else if (mode.equalsIgnoreCase("WALK") || mode.equalsIgnoreCase("foot") || mode.equalsIgnoreCase("walking")) {
                 osrmProfile = "foot";
             }
