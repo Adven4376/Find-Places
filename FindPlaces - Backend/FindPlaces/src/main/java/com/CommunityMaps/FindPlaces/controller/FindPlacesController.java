@@ -1,6 +1,5 @@
 package com.CommunityMaps.FindPlaces.controller;
 
-
 import com.CommunityMaps.FindPlaces.dto.CreatePlaceRequest;
 import com.CommunityMaps.FindPlaces.entity.FindPlaces;
 import com.CommunityMaps.FindPlaces.repository.FindPlacesRepository;
@@ -24,14 +23,12 @@ public class FindPlacesController {
         this.service = service;
     }
 
-
     // GET all places OR filter by category
     @GetMapping
     public Page<PlaceResponse> getPlaces(
             @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size
-    ) {
+            @RequestParam(defaultValue = "5") int size) {
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -51,8 +48,7 @@ public class FindPlacesController {
     // Top rated overall
     @GetMapping("/top-rated")
     public List<PlaceResponse> getTopRated(
-            @RequestParam(defaultValue = "10") int limit
-    ) {
+            @RequestParam(defaultValue = "10") int limit) {
         return service.getTopRated(limit);
     }
 
@@ -62,10 +58,8 @@ public class FindPlacesController {
             @RequestParam double lat,
             @RequestParam double lng,
             @RequestParam double radius,
-            @RequestParam(defaultValue = "10") int limit
-    ) {
+            @RequestParam(defaultValue = "10") int limit) {
         return service.getTopRatedNearby(lat, lng, radius, limit);
     }
-
 
 }

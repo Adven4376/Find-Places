@@ -78,6 +78,158 @@ function calculateBearing(lat1, lng1, lat2, lng2) {
   return (toDeg(brng) + 360) % 360;
 }
 
+/* ---------------- MAP HANDLERS ---------------- */
+
+function MapEventsHandler({ setIsAutoPanning }) {
+  useMapEvents({
+    dragstart: () => setIsAutoPanning(false),
+    touchstart: () => setIsAutoPanning(false),
+    mousedown: () => setIsAutoPanning(false),
+    wheel: () => setIsAutoPanning(false)
+  });
+  return null;
+}
+
+function FollowUser({
+  routeCoords,
+  data,
+  currentStepIndex,
+  setCurrentStepIndex,
+  onDeviation,
+  isAutoPanning,
+  hasArrived,
+  setHasArrived,
+  setSpeed,
+  muted
+}) {
+  const map = useMap();
+
+  const [position, setPosition] = useState(null);
+  const [heading, setHeading] = useState(0);
+
+  const previousPosition = useRef(null);
+  const spokenStepRef = useRef(-1);
+  const isReRoutingRef = useRef(false);
+
+  // Use a ref to hold latest state for the watchPosition closure
+  // to prevent constantly restarting the GPS tracker when state changes.
+  const stateRef = useRef({ data, currentStepIndex, isAutoPanning, hasArrived });
+  useEffect(() => {
+    stateRef.current = { data, currentStepIndex, isAutoPanning, hasArrived };
+  }, [data, currentStepIndex, isAutoPanning, hasArrived]);
+
+  /* ---------------- COMPASS SUPPORT ---------------- */
+  useEffect(() => {
+    const handleOrientation = (event) => {
+      if (event.alpha !== null) {
+        setHeading(event.alpha);
+      }
+    };
+    window.addEventListener("deviceorientationabsolute", handleOrientation);
+    return () => window.removeEventListener("deviceorientationabsolute", handleOrientation);
+  }, []);
+
+  /* ---------------- VOICE NAVIGATION ---------------- */
+  useEffect(() => {
+    if (!data.steps[currentStepIndex]) return;
+    if (spokenStepRef.current === currentStepIndex) return;
+    if (muted) return;
+
+    speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(data.steps[currentStepIndex].instruction);
+    msg.rate = 1; msg.pitch = 1;
+    speechSynthesis.speak(msg);
+
+    spokenStepRef.current = currentStepIndex;
+  }, [currentStepIndex, data.steps, muted]);
+
+  useEffect(() => {
+    return () => speechSynthesis.cancel();
+  }, []);
+
+  /* ---------------- GPS TRACKING ---------------- */
+  useEffect(() => {
+    isReRoutingRef.current = false; // Reset reroute lock on new route
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { data, currentStepIndex, isAutoPanning, hasArrived } = stateRef.current;
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        setPosition([lat, lng]);
+
+        if (pos.coords.speed) {
+          setSpeed((pos.coords.speed * 3.6).toFixed(1));
+        }
+
+        /* ----- MOVEMENT BEARING ----- */
+        if (previousPosition.current) {
+          const bearing = calculateBearing(
+            previousPosition.current[0],
+            previousPosition.current[1],
+            lat, lng
+          );
+          setHeading(bearing);
+        }
+        previousPosition.current = [lat, lng];
+
+        /* ----- FOLLOW USER ----- */
+        if (isAutoPanning) {
+          map.panTo([lat, lng], {
+            animate: true,
+            duration: 0.8, // Quicker pan to track smoothly without lagging behind
+            easeLinearity: 0.2
+          });
+        }
+
+        /* ----- REROUTE DETECTION ----- */
+        const isNearRoute = routeCoords.some(([rLat, rLng]) => {
+          return haversine(lat, lng, rLat, rLng) < 50;
+        });
+
+        if (!isNearRoute && !hasArrived) {
+          if (!isReRoutingRef.current) {
+            isReRoutingRef.current = true;
+            onDeviation(lat, lng);
+            setTimeout(() => { isReRoutingRef.current = false; }, 10000); // 10s cooldown
+          }
+        }
+
+        /* ----- STEP PROGRESS ----- */
+        const currentStep = data.steps[currentStepIndex];
+        if (currentStep) {
+          const [stepLng, stepLat] = currentStep.location;
+          const distance = haversine(lat, lng, stepLat, stepLng);
+
+          if (currentStepIndex === data.steps.length - 1 && distance < 30) {
+            setHasArrived(true);
+          }
+
+          if (distance < 40) {
+            setCurrentStepIndex((prev) =>
+              prev < data.steps.length - 1 ? prev + 1 : prev
+            );
+          }
+        }
+      },
+      (err) => console.error(err),
+      { enableHighAccuracy: true }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [map, routeCoords, onDeviation, setHasArrived, setCurrentStepIndex, setSpeed]);
+
+  return position ? (
+    <Marker
+      position={position}
+      icon={navigationIcon}
+      rotationAngle={heading}
+      rotationOrigin="center"
+    />
+  ) : null;
+}
+
 /* ---------------- MAIN COMPONENT ---------------- */
 
 export default function NavigationScreen({ data, routeCoords, onExit, onReRoute, travelMode, onTravelModeChange }) {
@@ -89,191 +241,43 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
   const [isAutoPanning, setIsAutoPanning] = useState(true);
   const [hasArrived, setHasArrived] = useState(false);
 
-  function MapEventsHandler() {
-    useMapEvents({
-      dragstart: () => setIsAutoPanning(false),
-      touchstart: () => setIsAutoPanning(false),
-      mousedown: () => setIsAutoPanning(false),
-      wheel: () => setIsAutoPanning(false)
-    });
-    return null;
-  }
-
-  function FollowUser({
-    routeCoords,
-    currentStepIndex,
-    setCurrentStepIndex,
-    onDeviation
-  }) {
-
-    const map = useMap();
-
-    const [position, setPosition] = useState(null);
-    const [heading, setHeading] = useState(0);
-
-    const previousPosition = useRef(null);
-    const spokenStepRef = useRef(-1);
-
-    /* ---------------- COMPASS SUPPORT ---------------- */
-
-    useEffect(() => {
-
-      const handleOrientation = (event) => {
-
-        if (event.alpha !== null) {
-          setHeading(event.alpha);
-        }
-
-      };
-
-      window.addEventListener("deviceorientationabsolute", handleOrientation);
-
-      return () =>
-        window.removeEventListener("deviceorientationabsolute", handleOrientation);
-
-    }, []);
-
-    /* ---------------- VOICE NAVIGATION ---------------- */
-
-    useEffect(() => {
-
-      if (!data.steps[currentStepIndex]) return;
-
-      if (spokenStepRef.current === currentStepIndex) return;
-
-      if (muted) return;
-
-      speechSynthesis.cancel();
-
-      const msg = new SpeechSynthesisUtterance(
-        data.steps[currentStepIndex].instruction
-      );
-
-      msg.rate = 1;
-      msg.pitch = 1;
-
-      speechSynthesis.speak(msg);
-
-      spokenStepRef.current = currentStepIndex;
-
-    }, [currentStepIndex, data.steps, muted]);
-
-    useEffect(() => {
-      return () => speechSynthesis.cancel();
-    }, []);
-
-    /* ---------------- GPS TRACKING ---------------- */
-
-    useEffect(() => {
-
-      const watchId = navigator.geolocation.watchPosition(
-
-        (pos) => {
-
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-
-          setPosition([lat, lng]);
-
-          if (pos.coords.speed) {
-            setSpeed((pos.coords.speed * 3.6).toFixed(1));
-          }
-
-          /* ----- MOVEMENT BEARING ----- */
-
-          if (previousPosition.current) {
-
-            const bearing = calculateBearing(
-              previousPosition.current[0],
-              previousPosition.current[1],
-              lat,
-              lng
-            );
-
-            setHeading(bearing);
-          }
-
-          previousPosition.current = [lat, lng];
-
-          /* ----- FOLLOW USER ----- */
-
-          if (isAutoPanning) {
-            map.panTo([lat, lng], {
-              animate: true,
-              duration: 1.5,
-              easeLinearity: 0.2
-            });
-          }
-
-          /* ----- REROUTE DETECTION ----- */
-
-          const isNearRoute = routeCoords.some(([rLat, rLng]) => {
-            const dist = haversine(lat, lng, rLat, rLng);
-            return dist < 50;
-          });
-
-          if (!isNearRoute && !hasArrived) {
-            onDeviation(lat, lng);
-          }
-
-          /* ----- STEP PROGRESS ----- */
-
-          const currentStep = data.steps[currentStepIndex];
-
-          if (currentStep) {
-            const [stepLng, stepLat] = currentStep.location;
-            const distance = haversine(lat, lng, stepLat, stepLng);
-
-            // Arrival check
-            if (currentStepIndex === data.steps.length - 1 && distance < 30) {
-              setHasArrived(true);
-            }
-
-            if (distance < 40) {
-              setCurrentStepIndex((prev) =>
-                prev < data.steps.length - 1 ? prev + 1 : prev
-              );
-            }
-          }
-
-        },
-
-        (err) => console.error(err),
-
-        { enableHighAccuracy: true }
-
-      );
-
-      return () => navigator.geolocation.clearWatch(watchId);
-
-    }, [map, routeCoords]);
-
-    /* ---------------- USER MARKER ---------------- */
-
-    return position ? (
-      <Marker
-        position={position}
-        icon={navigationIcon}
-        rotationAngle={heading}
-        rotationOrigin="center"
-      />
-    ) : null;
-  }
+  // Reset steps and arrival state when data (route) changes
+  useEffect(() => {
+    setCurrentStepIndex(0);
+    setHasArrived(false);
+  }, [data]);
 
   return (
     <div className="h-screen pt-[80px] md:pt-[100px] flex flex-col bg-gray-100 dark:bg-[#0f172a]">
 
       {/* HEADER */}
 
-      <div className="bg-white dark:bg-[#0b1120] shadow-md px-4 py-3 flex flex-wrap justify-between items-center gap-2">
+      <div className="bg-white dark:bg-[#0b1120] shadow-md z-10 px-4 py-3 flex flex-col md:flex-row justify-between md:items-center gap-4">
 
-        <button onClick={onExit} className="text-red-500 font-semibold">
-          Back
-        </button>
+        {/* Left Side: Exit + Destination Info */}
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <button onClick={onExit} className="text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-500/10 px-4 py-2 flex items-center justify-center rounded-xl border border-red-100 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/30 transition-colors shrink-0">
+            Exit
+          </button>
+          
+          <div className="flex flex-col">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-0.5 line-clamp-1">
+              To {data?.destination?.name || "Destination"}
+            </h2>
+            <div className="flex items-center gap-2 text-sm font-bold">
+              <span className="text-emerald-600 dark:text-emerald-400">{data?.duration}</span>
+              <span className="text-gray-400">•</span>
+              <span className="text-gray-600 dark:text-gray-300">{data?.distance}</span>
+            </div>
+          </div>
+        </div>
 
-        <div className="flex gap-3">
+        {/* Right Side: Controls */}
+        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
 
-          {/* TRAVEL MODE */}
+          <div className="flex gap-2 bg-gray-100 dark:bg-gray-800/80 p-1.5 rounded-xl border border-gray-200 dark:border-white/5">
+
+            {/* TRAVEL MODE */}
 
           <button
             onClick={() => onTravelModeChange("DRIVE")}
@@ -308,9 +312,11 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
         </button>
 
         <div className="text-center">
-          <div className="text-sm text-gray-500">Speed</div>
-          <div className="font-semibold">{speed} km/h</div>
+          <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Speed</div>
+          <div className="font-bold text-gray-900 dark:text-white tabular-nums">{speed} <span className="text-xs text-gray-500">km/h</span></div>
         </div>
+
+      </div>
 
       </div>
 
@@ -349,13 +355,19 @@ export default function NavigationScreen({ data, routeCoords, onExit, onReRoute,
           zoom={16}
           className="h-full w-full"
         >
-          <MapEventsHandler />
+          <MapEventsHandler setIsAutoPanning={setIsAutoPanning} />
 
           <FollowUser
             routeCoords={routeCoords}
+            data={data}
             currentStepIndex={currentStepIndex}
             setCurrentStepIndex={setCurrentStepIndex}
             onDeviation={(lat, lng) => onReRoute(lat, lng)}
+            isAutoPanning={isAutoPanning}
+            hasArrived={hasArrived}
+            setHasArrived={setHasArrived}
+            setSpeed={setSpeed}
+            muted={muted}
           />
 
           <TileLayer
